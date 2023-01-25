@@ -1171,7 +1171,7 @@ public class Level implements ChunkManager, Metadatable {
                 }
 
                 for (Player player : players) {
-                    player.batchDataPacket(packet);
+                    player.dataPacket(packet);
                 }
             }
         }
@@ -1205,7 +1205,7 @@ public class Level implements ChunkManager, Metadatable {
                 throw new IllegalStateException("Unable to create BlockUpdatePacket at (" + b.x + ", " + b.y + ", " + b.z + ") in " + getName() + " for player " + target.getName() + " with protocol " + target.protocol);
             }
 
-            target.batchDataPacket(updateBlockPacket);
+            target.dataPacket(updateBlockPacket);
         }
     }
 
@@ -3927,7 +3927,7 @@ public class Level implements ChunkManager, Metadatable {
         pk.onGround = entity.onGround;
 
         for (Player p : entity.getViewers().values()) {
-            p.batchDataPacket(pk); // Server.broadcastPacket would only use batching for >= 1.16.100
+            p.dataPacket(pk); // Server.broadcastPacket would only use batching for >= 1.16.100
         }
     }
 

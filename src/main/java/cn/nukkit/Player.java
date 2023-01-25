@@ -3,6 +3,7 @@ package cn.nukkit;
 import cn.nukkit.AdventureSettings.Type;
 import cn.nukkit.block.*;
 import cn.nukkit.blockentity.BlockEntity;
+import cn.nukkit.blockentity.BlockEntityCampfire;
 import cn.nukkit.blockentity.BlockEntityItemFrame;
 import cn.nukkit.blockentity.BlockEntitySpawnable;
 import cn.nukkit.command.Command;
@@ -100,7 +101,6 @@ import java.util.List;
 import java.util.*;
 import java.util.Queue;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -229,8 +229,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
     protected AdventureSettings adventureSettings;
 
     protected boolean checkMovement = true;
-
-    private final Queue<DataPacket> packetQueue = new ConcurrentLinkedDeque<>();
 
     private PermissibleBase perm;
     /**
@@ -831,6 +829,13 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                 }
             }
         }
+
+        if (this.protocol >= ProtocolInfo.v1_19_10) {
+            for (BlockEntity blockEntity : this.level.getChunkBlockEntities(x, z).values()) {
+                if (!(blockEntity instanceof BlockEntityItemFrame) && !(blockEntity instanceof BlockEntityCampfire)) continue;
+                ((BlockEntitySpawnable)blockEntity).spawnTo(this);
+            }
+        }
     }
 
     public void sendChunk(int x, int z, int subChunkCount, byte[] payload) {
@@ -838,30 +843,13 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
             return;
         }
 
-        this.usedChunks.put(Level.chunkHash(x, z), true);
-
         LevelChunkPacket pk = new LevelChunkPacket();
         pk.chunkX = x;
         pk.chunkZ = z;
         pk.subChunkCount = subChunkCount;
         pk.data = payload;
 
-        this.batchDataPacket(pk);
-        /*if (this.protocol < ProtocolInfo.v1_12_0) {
-            this.dataPacket(pk); // Multiversion for batchPackets is broken?
-        } else {
-            this.server.batchPackets(new Player[]{this}, new DataPacket[]{pk}, true);
-        }*/
-
-        this.chunksSent++;
-
-        if (this.spawned) {
-            for (Entity entity : this.level.getChunkEntities(x, z).values()) {
-                if (this != entity && !entity.closed && entity.isAlive()) {
-                    entity.spawnTo(this);
-                }
-            }
-        }
+        this.sendChunk(x, z, pk);
     }
 
     protected void sendNextChunk() {
@@ -1149,6 +1137,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
         return true;
     }
 
+    @Deprecated
     public boolean batchDataPacket(DataPacket packet) {
         return this.dataPacket(packet);
     }
@@ -1163,6 +1152,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
             return false;
         }
 
+        packet = packet.clone();
         packet.protocol = this.protocol;
 
         try (Timing ignore = Timings.getSendDataPacketTiming(packet)) {
@@ -1178,7 +1168,11 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                 log.trace("Outbound {}: {}", this.getName(), packet);
             }
 
-            this.networkSession.sendPacket(packet);
+            if (packet instanceof BatchPacket) {
+                this.networkSession.sendPacket(packet);
+            } else {
+                this.server.batchPackets(new Player[]{this}, new DataPacket[]{packet}, true);
+            }
         }
         return true;
     }
@@ -1196,33 +1190,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
      */
     public boolean directDataPacket(DataPacket packet) {
         return this.dataPacket(packet);
-        /*if (!this.connected) {
-            return false;
-        }
-
-        if (!loggedIn && packet.pid() == ProtocolInfo.SET_ENTITY_DATA_PACKET) {
-            return false; //HACK
-        }
-
-        packet.protocol = this.protocol;
-
-        try (Timing ignore = Timings.getSendDataPacketTiming(packet)) {
-            if (server.callDataPkSendEv && packet.pid() != ProtocolInfo.BATCH_PACKET) {
-                DataPacketSendEvent ev = new DataPacketSendEvent(this, packet);
-                this.server.getPluginManager().callEvent(ev);
-                if (ev.isCancelled()) {
-                    return false;
-                }
-            }
-
-            if (Nukkit.DEBUG > 2 *//*&& !server.isIgnoredPacket(packet.getClass())*//* && packet.pid() != ProtocolInfo.BATCH_PACKET) {
-                log.trace("Outbound {}: {}", this.getName(), packet);
-            }
-
-            this.interfaz.putPacket(this, packet, false, true);
-        }
-
-        return true;*/
     }
 
     public int directDataPacket(DataPacket packet, boolean needACK) {
@@ -2157,8 +2124,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
             return;
         }
 
-        this.processBatchPackets();
-
         if (!this.isOnline()) {
             return;
         }
@@ -2169,18 +2134,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
 
         if (!this.loadQueue.isEmpty() || !this.spawned) {
             this.sendNextChunk();
-        }
-    }
-
-    private void processBatchPackets() {
-        if (!this.packetQueue.isEmpty()) {
-            List<DataPacket> toBatch = new ArrayList<>();
-            DataPacket packet;
-            while ((packet = this.packetQueue.poll()) != null) {
-                toBatch.add(packet);
-            }
-            DataPacket[] arr = toBatch.toArray(new DataPacket[0]);
-            this.server.batchPackets(new Player[]{this}, arr, false);
         }
     }
 
@@ -5976,7 +5929,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
     @Override
     protected void preSwitchLevel() {
         // Make sure batch packets from the previous world gets through first
-        this.processBatchPackets();
+        this.networkSession.flush();
 
         // Remove old chunks
         this.unloadChunks(true);
@@ -6302,38 +6255,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
         }
 
         this.fishing = null;
-    }
-
-    /**
-     * Batch packet and send it immediately
-     * @param pk data packet
-     */
-    protected void quickBatch(DataPacket pk) {
-        pk.protocol = this.protocol;
-        if (server.callDataPkSendEv) {
-            DataPacketSendEvent event = new DataPacketSendEvent(this, pk);
-            this.server.getPluginManager().callEvent(event);
-            if (event.isCancelled()) {
-                return;
-            }
-        }
-        pk.tryEncode();
-        BinaryStream stream = new BinaryStream();
-        byte[] buf = pk.getBuffer();
-        stream.putUnsignedVarInt(buf.length);
-        stream.put(buf);
-        try {
-            byte[] bytes = Binary.appendBytes(stream.getBuffer());
-            BatchPacket batched = new BatchPacket();
-            if (this.protocol >= ProtocolInfo.v1_16_0) {
-                batched.payload = Zlib.deflateRaw(bytes, Server.getInstance().networkCompressionLevel);
-            } else {
-                batched.payload = Zlib.deflate(bytes, Server.getInstance().networkCompressionLevel);
-            }
-            this.directDataPacket(batched);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override

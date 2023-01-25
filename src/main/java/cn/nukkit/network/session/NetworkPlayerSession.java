@@ -9,6 +9,8 @@ public interface NetworkPlayerSession {
     void sendPacket(DataPacket packet);
     void sendImmediatePacket(DataPacket packet, Runnable callback);
 
+    void flush();
+
     void disconnect(String reason);
 
     Player getPlayer();

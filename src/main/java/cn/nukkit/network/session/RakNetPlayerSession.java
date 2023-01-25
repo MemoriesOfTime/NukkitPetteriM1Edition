@@ -104,7 +104,7 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
     public void sendPacket(DataPacket packet) {
         if (!this.session.isClosed()) {
             if (packet.protocol != this.player.protocol) {
-                log.warn("Wrong protocol used for {}! expected {} got{}", packet.getClass().getSimpleName(), (Object)this.player.protocol, packet.protocol);
+                log.warn("Wrong protocol used for {}! expected {} got{}", packet.getClass().getSimpleName(), this.player.protocol, packet.protocol);
             }
             packet.tryEncode();
             this.outbound.offer(packet);
@@ -123,6 +123,11 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
             this.networkTick();
             callback.run();
         });
+    }
+
+    @Override
+    public void flush() {
+        this.session.getEventLoop().execute(this::networkTick);
     }
 
     private void networkTick() {
