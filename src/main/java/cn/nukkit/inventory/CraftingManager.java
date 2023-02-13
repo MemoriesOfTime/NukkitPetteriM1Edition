@@ -665,6 +665,11 @@ public class CraftingManager {
             UUID id = Utils.dataToUUID(String.valueOf(++RECIPE_COUNT), String.valueOf(recipe.getResult().getId()), String.valueOf(recipe.getResult().getDamage()), String.valueOf(recipe.getResult().getCount()), Arrays.toString(recipe.getResult().getCompoundTag()));
             ((CraftingRecipe) recipe).setId(id);
             this.getRegisterRecipes(protocol).add(recipe);
+            if (recipe instanceof ShapedRecipe) {
+                this.registerShapedRecipe(protocol, (ShapedRecipe) recipe);
+            }else if (recipe instanceof ShapelessRecipe) {
+                this.registerShapelessRecipe(protocol, (ShapelessRecipe) recipe);
+            }
         }
         recipe.registerToCraftingManager(this);
     }
