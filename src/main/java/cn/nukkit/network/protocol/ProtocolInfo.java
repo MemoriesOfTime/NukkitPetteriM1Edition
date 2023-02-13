@@ -263,4 +263,6 @@ public interface ProtocolInfo {
     byte UPDATE_ABILITIES_PACKET = (byte) 0xbb;
     byte UPDATE_ADVENTURE_SETTINGS_PACKET = (byte) 0xbc;
     byte REQUEST_NETWORK_SETTINGS_PACKET = (byte) 0xc1;
+    byte GAME_TEST_RESULTS_PACKET = (byte) 0xc3;
+    byte UPDATE_CLIENT_INPUT_LOCKS = (byte) 0xc4;
 }

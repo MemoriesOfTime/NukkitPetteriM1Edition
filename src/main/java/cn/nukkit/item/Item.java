@@ -458,7 +458,7 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
         registerCreativeItemsNew(ProtocolInfo.v1_19_0, ProtocolInfo.v1_19_0, creative527);
         registerCreativeItemsNew(ProtocolInfo.v1_19_0, ProtocolInfo.v1_19_10, creative534);
         registerCreativeItemsNew(ProtocolInfo.v1_19_20, ProtocolInfo.v1_19_20, creative544);
-        registerCreativeItemsNew(ProtocolInfo.v1_19_20, ProtocolInfo.v1_19_50, creative560);
+        registerCreativeItemsNew(ProtocolInfo.v1_19_50, ProtocolInfo.v1_19_50, creative560);
     }
 
     private static void registerCreativeItemsNew(int protocol, int blockPaletteProtocol, List<Item> creativeItems) {
