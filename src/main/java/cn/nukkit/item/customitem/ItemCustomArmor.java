@@ -179,6 +179,7 @@ public abstract class ItemCustomArmor extends ItemCustom implements ItemDurable 
                 case TIER_OTHER:
                 default:
                     player.getLevel().addLevelSoundEvent(player, LevelSoundEventPacket.SOUND_ARMOR_EQUIP_GENERIC);
+                    break;
             }
         }
 
@@ -199,10 +200,11 @@ public abstract class ItemCustomArmor extends ItemCustom implements ItemDurable 
             case TIER_IRON:
                 return 9;
             case TIER_NETHERITE:
-                return 10; //TODO
+                //TODO
+                return 10;
+            default:
+                return 0;
         }
-
-        return 0;
     }
 
     @Override

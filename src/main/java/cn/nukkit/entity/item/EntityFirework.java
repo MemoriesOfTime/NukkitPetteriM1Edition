@@ -37,7 +37,11 @@ public class EntityFirework extends Entity {
         super.initEntity();
 
         ThreadLocalRandom rand = ThreadLocalRandom.current();
+
         this.lifetime = 30 + rand.nextInt(12);
+        if (namedTag.contains("FireworkLifeTime")) {
+            this.lifetime = namedTag.getInt("FireworkLifeTime");
+        }
 
         this.motionX = rand.nextGaussian() * 0.001D;
         this.motionZ = rand.nextGaussian() * 0.001D;
@@ -77,7 +81,9 @@ public class EntityFirework extends Entity {
 
         this.lastUpdate = currentTick;
 
-        if (this.timing != null) this.timing.startTiming();
+        if (this.timing != null) {
+            this.timing.startTiming();
+        }
 
         boolean hasUpdate = this.entityBaseTick(tickDiff);
 
@@ -114,7 +120,9 @@ public class EntityFirework extends Entity {
             }
         }
 
-        if (this.timing != null) this.timing.stopTiming();
+        if (this.timing != null) {
+            this.timing.stopTiming();
+        }
 
         return hasUpdate || !this.onGround || Math.abs(this.motionX) > 0.00001 || Math.abs(this.motionY) > 0.00001 || Math.abs(this.motionZ) > 0.00001;
     }
@@ -134,6 +142,10 @@ public class EntityFirework extends Entity {
         int flight = Math.max(1, this.firework instanceof ItemFirework ? ((ItemFirework) this.firework).getFlight() : 1);
         ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
         this.lifetime = 10 * (flight + 1) + threadLocalRandom.nextInt(5) + threadLocalRandom.nextInt(6);
+    }
+
+    public void setLifetime(int lifetime) {
+        this.lifetime = lifetime;
     }
 
     @Override
