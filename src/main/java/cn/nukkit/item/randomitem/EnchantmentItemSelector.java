@@ -4,10 +4,9 @@ import cn.nukkit.item.Item;
 import cn.nukkit.item.enchantment.Enchantment;
 import cn.nukkit.utils.Utils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * @author LT_Name
@@ -32,7 +31,8 @@ public class EnchantmentItemSelector extends ConstantItemSelector {
         if (!enchantments.isEmpty()) {
             Random random = ThreadLocalRandom.current();
             Enchantment enchantment = enchantments.get(random.nextInt(enchantments.size()));
-            if (random.nextDouble() < 0.3) { //减少高等级附魔概率
+            //减少高等级附魔概率
+            if (random.nextDouble() < 0.3) {
                 enchantment.setLevel(Utils.rand(1, enchantment.getMaxLevel()));
             }
             item.addEnchantment(enchantment);
