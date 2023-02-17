@@ -11,8 +11,6 @@ import lombok.Setter;
 
 import java.util.Optional;
 
-import static cn.nukkit.network.protocol.SetEntityLinkPacket.TYPE_REMOVE;
-
 /**
  * @author Nissining
  */
@@ -89,7 +87,7 @@ public class EntityDefaultJockey extends EntityWalkingMob {
 
     @Override
     public boolean dismountEntity(Entity entity) {
-        broadcastLinkPacket(entity, TYPE_REMOVE);
+        broadcastLinkPacket(entity, SetEntityLinkPacket.TYPE_REMOVE);
         // Refurbish the entity
         entity.riding = null;
         entity.setDataFlag(DATA_FLAGS, DATA_FLAG_RIDING, false);
