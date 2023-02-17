@@ -1,18 +1,24 @@
 package cn.nukkit.entity.passive;
 
 import cn.nukkit.Player;
+import cn.nukkit.entity.Entity;
 import cn.nukkit.entity.EntityCreature;
 import cn.nukkit.event.entity.EntityDamageEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.level.format.FullChunk;
 import cn.nukkit.level.particle.ItemBreakParticle;
 import cn.nukkit.math.Vector3;
+import cn.nukkit.math.Vector3f;
 import cn.nukkit.nbt.tag.CompoundTag;
 import cn.nukkit.network.protocol.LevelSoundEventPacket;
+import cn.nukkit.network.protocol.SetEntityLinkPacket;
 import cn.nukkit.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import static cn.nukkit.network.protocol.SetEntityLinkPacket.TYPE_REMOVE;
 
 public class EntityChicken extends EntityWalkingAnimal {
 
@@ -98,9 +104,9 @@ public class EntityChicken extends EntityWalkingAnimal {
             int id = player.getInventory().getItemInHandFast().getId();
             return player.isAlive() && !player.closed
                     && (id == Item.SEEDS
-                            || id == Item.BEETROOT_SEEDS
-                            || id == Item.MELON_SEEDS
-                            || id == Item.PUMPKIN_SEEDS)
+                    || id == Item.BEETROOT_SEEDS
+                    || id == Item.MELON_SEEDS
+                    || id == Item.PUMPKIN_SEEDS)
                     && distance <= 40;
         }
         return false;
@@ -108,30 +114,33 @@ public class EntityChicken extends EntityWalkingAnimal {
 
     @Override
     public boolean onInteract(Player player, Item item, Vector3 clickedPos) {
-        if (item.getId() == Item.SEEDS && !this.isBaby() && !this.isInLoveCooldown()) {
-            player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
-            this.level.addParticle(new ItemBreakParticle(
-                    this.add(Utils.rand(-0.5, 0.5), this.getMountedYOffset(), Utils.rand(-0.5, 0.5)),
-                    Item.get(Item.SEEDS)));
-            this.setInLove();
-        } else if (item.getId() == Item.BEETROOT_SEEDS && !this.isBaby() && !this.isInLoveCooldown()) {
-            player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
-            this.level.addParticle(new ItemBreakParticle(
-                    this.add(Utils.rand(-0.5, 0.5), this.getMountedYOffset(), Utils.rand(-0.5, 0.5)),
-                    Item.get(Item.BEETROOT_SEEDS)));
-            this.setInLove();
-        } else if (item.getId() == Item.MELON_SEEDS && !this.isBaby() && !this.isInLoveCooldown()) {
-            player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
-            this.level.addParticle(new ItemBreakParticle(
-                    this.add(Utils.rand(-0.5, 0.5), this.getMountedYOffset(), Utils.rand(-0.5, 0.5)),
-                    Item.get(Item.MELON_SEEDS)));
-            this.setInLove();
-        } else if (item.getId() == Item.PUMPKIN_SEEDS && !this.isBaby() && !this.isInLoveCooldown()) {
-            player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
-            this.level.addParticle(new ItemBreakParticle(
-                    this.add(Utils.rand(-0.5, 0.5), this.getMountedYOffset(), Utils.rand(-0.5, 0.5)),
-                    Item.get(Item.PUMPKIN_SEEDS)));
-            this.setInLove();
+        // 无法喂养小鸡骑士
+        if (!isChickenJockey()) {
+            if (item.getId() == Item.SEEDS && !this.isBaby() && !this.isInLoveCooldown()) {
+                player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
+                this.level.addParticle(new ItemBreakParticle(
+                        this.add(Utils.rand(-0.5, 0.5), this.getMountedYOffset(), Utils.rand(-0.5, 0.5)),
+                        Item.get(Item.SEEDS)));
+                this.setInLove();
+            } else if (item.getId() == Item.BEETROOT_SEEDS && !this.isBaby() && !this.isInLoveCooldown()) {
+                player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
+                this.level.addParticle(new ItemBreakParticle(
+                        this.add(Utils.rand(-0.5, 0.5), this.getMountedYOffset(), Utils.rand(-0.5, 0.5)),
+                        Item.get(Item.BEETROOT_SEEDS)));
+                this.setInLove();
+            } else if (item.getId() == Item.MELON_SEEDS && !this.isBaby() && !this.isInLoveCooldown()) {
+                player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
+                this.level.addParticle(new ItemBreakParticle(
+                        this.add(Utils.rand(-0.5, 0.5), this.getMountedYOffset(), Utils.rand(-0.5, 0.5)),
+                        Item.get(Item.MELON_SEEDS)));
+                this.setInLove();
+            } else if (item.getId() == Item.PUMPKIN_SEEDS && !this.isBaby() && !this.isInLoveCooldown()) {
+                player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
+                this.level.addParticle(new ItemBreakParticle(
+                        this.add(Utils.rand(-0.5, 0.5), this.getMountedYOffset(), Utils.rand(-0.5, 0.5)),
+                        Item.get(Item.PUMPKIN_SEEDS)));
+                this.setInLove();
+            }
         }
         return super.onInteract(player, item, clickedPos);
     }
@@ -163,11 +172,10 @@ public class EntityChicken extends EntityWalkingAnimal {
         if (ev.getCause() != EntityDamageEvent.DamageCause.FALL) {
             return super.attack(ev);
         }
-
         return false;
     }
 
-    private static  int getRandomEggLayTime() {
+    private static int getRandomEggLayTime() {
         return Utils.rand(6000, 12000);
     }
 

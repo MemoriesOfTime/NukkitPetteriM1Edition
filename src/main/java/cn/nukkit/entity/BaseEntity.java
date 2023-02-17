@@ -108,10 +108,7 @@ public abstract class BaseEntity extends EntityCreature implements EntityAgeable
     }
 
     public double getSpeed() {
-        if (this.baby) {
-            return 1.2;
-        }
-        return 1;
+        return 1.1D;
     }
 
     public int getAge() {
@@ -297,10 +294,12 @@ public abstract class BaseEntity extends EntityCreature implements EntityAgeable
 
     @Override
     public boolean setMotion(Vector3 motion) {
-        if (this.getServer().getMobAiEnabled()) {
-            super.setMotion(motion);
-        }
-        return false;
+        // 关闭自带的ai，可以从move来阻止移动
+        //if (this.getServer().getMobAiEnabled()) {
+        //    super.setMotion(motion);
+        //}
+        //return false;
+        return super.setMotion(motion);
     }
 
     @Override
@@ -399,6 +398,8 @@ public abstract class BaseEntity extends EntityCreature implements EntityAgeable
         Item boots = Item.get(0);
 
         switch (Utils.rand(1, 5)) {
+            default:
+                break;
             case 1:
                 if (Utils.rand(1, 100) < 39) {
                     if (Utils.rand(0, 1) == 0) {
@@ -445,6 +446,8 @@ public abstract class BaseEntity extends EntityCreature implements EntityAgeable
 
         if (Utils.rand(1, 4) != 1) {
             switch (Utils.rand(1, 5)) {
+                default:
+                    break;
                 case 1:
                     if (Utils.rand(1, 100) < 39) {
                         if (Utils.rand(0, 1) == 0) {
@@ -492,6 +495,8 @@ public abstract class BaseEntity extends EntityCreature implements EntityAgeable
 
         if (Utils.rand(1, 2) == 2) {
             switch (Utils.rand(1, 5)) {
+                default:
+                    break;
                 case 1:
                     if (Utils.rand(1, 100) < 39) {
                         if (Utils.rand(0, 1) == 0) {
@@ -539,6 +544,8 @@ public abstract class BaseEntity extends EntityCreature implements EntityAgeable
 
         if (Utils.rand(1, 5) < 3) {
             switch (Utils.rand(1, 5)) {
+                default:
+                    break;
                 case 1:
                     if (Utils.rand(1, 100) < 39) {
                         if (Utils.rand(0, 1) == 0) {

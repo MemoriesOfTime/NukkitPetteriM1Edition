@@ -50,14 +50,14 @@ public class EntityZombie extends EntityWalkingMob implements EntitySmite {
 
     @Override
     public double getSpeed() {
-        return 1.1;
+        return isBaby() ? 1.4 : super.getSpeed();
     }
 
     @Override
     protected void initEntity() {
         super.initEntity();
 
-        this.setDamage(new int[] { 0, 2, 3, 4 });
+        this.setDamage(new int[]{0, 2, 3, 4});
         this.setMaxHealth(20);
 
         this.armor = getRandomArmor();
@@ -145,6 +145,8 @@ public class EntityZombie extends EntityWalkingMob implements EntitySmite {
 
             if (Utils.rand(1, 3) == 1) {
                 switch (Utils.rand(1, 3)) {
+                    default:
+                        break;
                     case 1:
                         drops.add(Item.get(Item.IRON_INGOT, 0, Utils.rand(0, 1)));
                         break;
