@@ -313,6 +313,9 @@ public class EntityFishingHook extends EntitySlenderProjectile {
 
 	@Override
 	public void onCollideWithEntity(Entity entity) {
+		if (entity == this.shootingEntity) {
+			return;
+		}
 		this.server.getPluginManager().callEvent(new ProjectileHitEvent(this, MovingObjectPosition.fromEntity(entity)));
 		float damage = this.getResultDamage();
 
@@ -324,6 +327,8 @@ public class EntityFishingHook extends EntitySlenderProjectile {
 		}
 
 		if (entity.attack(ev)) {
+			this.hadCollision = true;
+
 			this.caughtEntity = entity;
 			this.setTarget(entity.getId());
 		}
