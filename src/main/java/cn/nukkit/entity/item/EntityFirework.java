@@ -70,6 +70,7 @@ public class EntityFirework extends Entity {
         super.saveNBT();
         if (this.firework != null) {
             this.namedTag.putCompound("FireworkItem", NBTIO.putItemHelper(this.firework));
+            this.namedTag.putInt("FireworkLifeTime", this.lifetime);
         }
     }
 
