@@ -41,10 +41,13 @@ public class EntityFirework extends Entity {
         super.initEntity();
 
         ThreadLocalRandom rand = ThreadLocalRandom.current();
-        int lifetime = 30 + rand.nextInt(12);
+
+        int lifetime;
         boolean contains = namedTag.contains("FireworkLifeTime");
         if (contains) {
             lifetime = namedTag.getInt("FireworkLifeTime");
+        } else {
+            lifetime = 30 + rand.nextInt(12);
         }
         if (lifetime > 0) {
             this.setLifetime(lifetime);
