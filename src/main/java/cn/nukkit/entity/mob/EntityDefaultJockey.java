@@ -16,7 +16,7 @@ import static cn.nukkit.network.protocol.SetEntityLinkPacket.TYPE_REMOVE;
 /**
  * @author Nissining
  */
-public class EntityDefaultJokey extends EntityWalkingMob {
+public class EntityDefaultJockey extends EntityWalkingMob {
     /**
      * todo 支持其他的敌对型生物
      */
@@ -27,7 +27,7 @@ public class EntityDefaultJokey extends EntityWalkingMob {
     @Setter
     private boolean isJockey = false;
 
-    public EntityDefaultJokey(FullChunk chunk, CompoundTag nbt) {
+    public EntityDefaultJockey(FullChunk chunk, CompoundTag nbt) {
         super(chunk, nbt);
     }
 
