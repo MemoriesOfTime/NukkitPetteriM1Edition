@@ -64,7 +64,7 @@ public class Skin {
     private String armSize = "wide";
     private boolean trusted = true;
     private String geometryDataEngineVersion = "";
-    private boolean overridingPlayerAppearance = false;
+    private boolean overridingPlayerAppearance = true;
 
     public boolean isValid() {
         return isValidSkin() && isValidResourcePatch();
