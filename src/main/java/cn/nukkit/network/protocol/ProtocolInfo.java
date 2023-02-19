@@ -65,6 +65,7 @@ public interface ProtocolInfo {
     int v1_19_40 = 557;
     int v1_19_50 = 560;
     int v1_19_60 = 567;
+    int v1_19_62 = 568; //假id 用于兼容1.19.62的皮肤修改
 
     int CURRENT_PROTOCOL = Utils.dynamic(v1_19_60);
 
