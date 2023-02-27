@@ -303,6 +303,7 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
             list[RECORD_STRAD] = ItemRecordStrad.class; //508
             list[RECORD_WAIT] = ItemRecordWait.class; //511
             list[SHIELD] = ItemShield.class; //513
+            list[RECORD_5] = ItemRecord5.class; //636
             list[OAK_CHEST_BOAT] = ItemChestBoatOak.class; //638
             list[BIRCH_CHEST_BOAT] = ItemChestBoatBirch.class; //639
             list[JUNGLE_CHEST_BOAT] = ItemChestBoatJungle.class; //640
