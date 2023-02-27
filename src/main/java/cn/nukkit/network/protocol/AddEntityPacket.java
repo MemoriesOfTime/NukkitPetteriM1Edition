@@ -245,7 +245,7 @@ public class AddEntityPacket extends DataPacket {
         }
 
         if (this.protocol < ProtocolInfo.v1_19_0) {
-            if (this.type == 218) {
+            if (this.type == EntityChestBoat.NETWORK_ID) {
                 return "minecraft:boat";
             }else if (this.type == EntityAllay.NETWORK_ID) {
                 return "minecraft:bat";
