@@ -8,7 +8,10 @@ import cn.nukkit.network.protocol.BatchPacket;
 import cn.nukkit.network.protocol.DataPacket;
 import cn.nukkit.network.protocol.ProtocolInfo;
 import cn.nukkit.utils.BinaryStream;
+import cn.nukkit.utils.EncryptionUtils;
 import com.google.common.base.Preconditions;
+import com.nukkitx.natives.sha256.Sha256;
+import com.nukkitx.natives.util.Natives;
 import com.nukkitx.network.raknet.EncapsulatedPacket;
 import com.nukkitx.network.raknet.RakNetServerSession;
 import com.nukkitx.network.raknet.RakNetSessionListener;
@@ -21,15 +24,19 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.message.FormattedMessage;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import java.net.ProtocolException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Queue;
+import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Log4j2
 public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionListener {
+
+    private static final ThreadLocal<Sha256> HASH_LOCAL = ThreadLocal.withInitial(Natives.SHA_256::get);
 
     private final RakNetInterface server;
     private final RakNetServerSession session;
@@ -43,16 +50,53 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
 
     private CompressionProvider compression;
 
+    private SecretKey agreedKey;
+    private Cipher encryptionCipher;
+    private Cipher decryptionCipher;
+
+    private final AtomicLong sentEncryptedPacketCount = new AtomicLong();
+
     public RakNetPlayerSession(RakNetInterface server, RakNetServerSession session) {
         this.server = server;
         this.session = session;
         this.tickFuture = session.getEventLoop().scheduleAtFixedRate(this::networkTick, 0, 50, TimeUnit.MILLISECONDS);
         this.compression = session.getProtocolVersion() >= 11 ? CompressionProvider.NONE : (session.getProtocolVersion() < 10 ? CompressionProvider.ZLIB : CompressionProvider.ZLIB_RAW);
+
+        this.agreedKey = null;
+        this.encryptionCipher = null;
+        this.decryptionCipher = null;
+    }
+
+    public synchronized void enableEncryption(SecretKey secretKey) {
+        Objects.requireNonNull(secretKey, "secretKey");
+        if (!secretKey.getAlgorithm().equals("AES")) {
+            throw new IllegalArgumentException("Invalid key algorithm");
+        } else if (this.encryptionCipher == null && this.decryptionCipher == null) {
+            this.agreedKey = secretKey;
+            boolean useGcm = this.player.protocol > ProtocolInfo.v1_16_210;
+            this.encryptionCipher = EncryptionUtils.createCipher(useGcm, true, secretKey);
+            this.decryptionCipher = EncryptionUtils.createCipher(useGcm, false, secretKey);
+        } else {
+            throw new IllegalStateException("Encryption has already been enabled");
+        }
     }
 
     @Override
     public void onEncapsulated(EncapsulatedPacket packet) {
         ByteBuf buffer = packet.getBuffer();
+
+        if (this.decryptionCipher != null) {
+            try {
+                ByteBuffer inBuffer = buffer.internalNioBuffer(buffer.readerIndex(), buffer.readableBytes());
+                ByteBuffer outBuffer = inBuffer.duplicate();
+                this.decryptionCipher.update(inBuffer, outBuffer);
+                buffer.writerIndex(buffer.writerIndex() - 8);
+                buffer.markReaderIndex();
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to decrypt packet", e);
+            }
+        }
+
         short packetId = buffer.readUnsignedByte();
         if (packetId == 0xfe) {
             byte[] packetBuffer = new byte[buffer.readableBytes()];
@@ -185,9 +229,27 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
     }
 
     private void sendPacket(byte[] payload) {
-        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.ioBuffer(1 + payload.length);
+        //TODO 修复
+        ByteBuf compressed = ByteBufAllocator.DEFAULT.ioBuffer(payload.length);
+        compressed.writeBytes(payload);
+
+        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.ioBuffer(1 + compressed.readableBytes() + 8);
         byteBuf.writeByte(0xfe);
-        byteBuf.writeBytes(payload);
+
+        if (this.encryptionCipher != null && false) {
+            try {
+                ByteBuffer trailer = ByteBuffer.wrap(this.generateTrailer(compressed));
+                ByteBuffer outBuffer = byteBuf.internalNioBuffer(1, compressed.readableBytes() + 8);
+                ByteBuffer inBuffer = compressed.internalNioBuffer(compressed.readerIndex(), compressed.readableBytes());
+                this.encryptionCipher.update(inBuffer, outBuffer);
+                this.encryptionCipher.update(trailer, outBuffer);
+                byteBuf.writerIndex(byteBuf.writerIndex() + compressed.readableBytes() + 8);
+            } catch (Exception e) {
+                log.error("Unable to encrypt packet", e);
+            }
+        }else {
+            byteBuf.writeBytes(compressed);
+        }
         this.session.send(byteBuf);
     }
 
@@ -218,5 +280,23 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
 
     public String getDisconnectReason() {
         return this.disconnectReason;
+    }
+
+    private byte[] generateTrailer(ByteBuf buf) {
+        Sha256 hash = HASH_LOCAL.get();
+        ByteBuf counterBuf = ByteBufAllocator.DEFAULT.directBuffer(8);
+        try {
+            counterBuf.writeLongLE(this.sentEncryptedPacketCount.getAndIncrement());
+            ByteBuffer keyBuffer = ByteBuffer.wrap(this.agreedKey.getEncoded());
+
+            hash.update(counterBuf.internalNioBuffer(0, 8));
+            hash.update(buf.internalNioBuffer(buf.readerIndex(), buf.readableBytes()));
+            hash.update(keyBuffer);
+            byte[] digested = hash.digest();
+            return Arrays.copyOf(digested, 8);
+        } finally {
+            counterBuf.release();
+            hash.reset();
+        }
     }
 }

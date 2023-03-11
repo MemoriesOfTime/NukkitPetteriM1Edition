@@ -2652,6 +2652,20 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                     Player playerInstance = this;
                     this.verified = true;
 
+                    if (this.server.encryption) {
+                        try {
+                            byte[] token = EncryptionUtils.generateRandomToken();
+
+                            ServerToClientHandshakePacket pk = new ServerToClientHandshakePacket();
+                            pk.setJwt(EncryptionUtils.createHandshakeJwt(ClientChainData.getPrivateKeyPair(), token).serialize());
+                            this.forceDataPacket(pk, null);
+
+                            this.getNetworkSession().enableEncryption(EncryptionUtils.getSecretKey(ClientChainData.getPrivateKeyPair().getPrivate(), this.loginChainData.getIdentityECPublicKey(), token));
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to enable encryption", e);
+                        }
+                    }
+
                     this.preLoginEventTask = new AsyncTask() {
                         private PlayerAsyncPreLoginEvent event;
 

@@ -2,6 +2,7 @@ package cn.nukkit.utils;
 
 import com.google.gson.JsonObject;
 
+import java.security.interfaces.ECPublicKey;
 import java.util.UUID;
 
 /**
@@ -16,6 +17,8 @@ public interface LoginChainData {
     UUID getClientUUID();
 
     String getIdentityPublicKey();
+
+    ECPublicKey getIdentityECPublicKey();
 
     long getClientId();
 

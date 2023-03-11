@@ -6,12 +6,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
+import com.nimbusds.jose.jwk.Curve;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -67,6 +66,10 @@ public final class ClientChainData implements LoginChainData {
     @Override
     public String getIdentityPublicKey() {
         return identityPublicKey;
+    }
+
+    public ECPublicKey getIdentityECPublicKey() {
+        return identityECPublicKey;
     }
 
     @Override
@@ -171,6 +174,7 @@ public final class ClientChainData implements LoginChainData {
     }
 
     private String identityPublicKey;
+    private ECPublicKey identityECPublicKey;
 
     private long clientId;
     private String serverAddress;
@@ -190,6 +194,22 @@ public final class ClientChainData implements LoginChainData {
     private JsonObject rawData;
 
     private final BinaryStream bs = new BinaryStream();
+
+    private static final KeyPair privateKeyPair;
+
+    static {
+        try {
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+            generator.initialize(Curve.P_384.toECParameterSpec());
+            privateKeyPair = generator.generateKeyPair();
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to generate private keyPair!", e);
+        }
+    }
+
+    public static KeyPair getPrivateKeyPair() {
+        return privateKeyPair;
+    }
 
     private ClientChainData(byte[] buffer) {
         bs.setBuffer(buffer, 0);
@@ -257,6 +277,11 @@ public final class ClientChainData implements LoginChainData {
             }
             if (chainMap.has("identityPublicKey")) {
                 this.identityPublicKey = chainMap.get("identityPublicKey").getAsString();
+                try {
+                    this.identityECPublicKey = generateKey(this.identityPublicKey);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to generate identity public key", e);
+                }
             }
         }
 

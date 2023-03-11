@@ -4,7 +4,11 @@ import cn.nukkit.Player;
 import cn.nukkit.network.CompressionProvider;
 import cn.nukkit.network.protocol.DataPacket;
 
+import javax.crypto.SecretKey;
+
 public interface NetworkPlayerSession {
+
+    void enableEncryption(SecretKey secretKey);
 
     void sendPacket(DataPacket packet);
     void sendImmediatePacket(DataPacket packet, Runnable callback);
