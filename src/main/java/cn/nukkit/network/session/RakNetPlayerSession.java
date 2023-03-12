@@ -7,6 +7,7 @@ import cn.nukkit.network.RakNetInterface;
 import cn.nukkit.network.protocol.BatchPacket;
 import cn.nukkit.network.protocol.DataPacket;
 import cn.nukkit.network.protocol.ProtocolInfo;
+import cn.nukkit.network.protocol.ServerToClientHandshakePacket;
 import cn.nukkit.utils.BinaryStream;
 import cn.nukkit.utils.EncryptionUtils;
 import com.google.common.base.Preconditions;
@@ -182,13 +183,17 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
         List<DataPacket> toBatch = new ObjectArrayList<>();
         DataPacket packet;
         while ((packet = this.outbound.poll()) != null) {
-            if (packet.pid() == ProtocolInfo.BATCH_PACKET) {
+            if (packet.pid() == ProtocolInfo.BATCH_PACKET || packet instanceof ServerToClientHandshakePacket) {
                 if (!toBatch.isEmpty()) {
                     this.sendPackets(toBatch);
                     toBatch.clear();
                 }
 
-                this.sendPacket(((BatchPacket) packet).payload);
+                if (packet instanceof ServerToClientHandshakePacket) {
+                    this.sendPacket(packet.getBuffer(), false);
+                }else {
+                    this.sendPacket(((BatchPacket) packet).payload);
+                }
             } else {
                 toBatch.add(packet);
             }
@@ -229,6 +234,10 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
     }
 
     private void sendPacket(byte[] payload) {
+        this.sendPacket(payload, false);
+    }
+
+    private void sendPacket(byte[] payload, boolean encrypt) {
         //TODO 修复
         ByteBuf compressed = ByteBufAllocator.DEFAULT.ioBuffer(payload.length);
         compressed.writeBytes(payload);
@@ -236,7 +245,7 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
         ByteBuf byteBuf = ByteBufAllocator.DEFAULT.ioBuffer(1 + compressed.readableBytes() + 8);
         byteBuf.writeByte(0xfe);
 
-        if (this.encryptionCipher != null && false) {
+        if (this.encryptionCipher != null && encrypt) {
             try {
                 ByteBuffer trailer = ByteBuffer.wrap(this.generateTrailer(compressed));
                 ByteBuffer outBuffer = byteBuf.internalNioBuffer(1, compressed.readableBytes() + 8);
@@ -248,7 +257,7 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
                 log.error("Unable to encrypt packet", e);
             }
         }else {
-            byteBuf.writeBytes(compressed);
+            byteBuf.writeBytes(payload);
         }
         this.session.send(byteBuf);
     }
