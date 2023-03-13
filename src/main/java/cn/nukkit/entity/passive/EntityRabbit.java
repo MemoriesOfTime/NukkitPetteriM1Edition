@@ -84,22 +84,10 @@ public class EntityRabbit extends EntityJumpingAnimal {
 
     @Override
     public boolean onInteract(Player player, Item item, Vector3 clickedPos) {
-        if (item.getId() == Item.DANDELION && !this.isBaby() && !this.isInLoveCooldown()) {
+        if (item.getId() == Item.DANDELION || item.getId() == Item.CARROT || item.getId() == Item.GOLDEN_CARROT) {
             player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
             this.level.addLevelSoundEvent(this, LevelSoundEventPacket.SOUND_EAT);
-            this.level.addParticle(new ItemBreakParticle(this.add(0,this.getMountedYOffset(),0),Item.get(Item.DANDELION)));
-            this.setInLove();
-            return true;
-        } else if (item.getId() == Item.CARROT && !this.isBaby() && !this.isInLoveCooldown()) {
-            player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
-            this.level.addLevelSoundEvent(this, LevelSoundEventPacket.SOUND_EAT);
-            this.level.addParticle(new ItemBreakParticle(this.add(0,this.getMountedYOffset(),0),Item.get(Item.CARROT)));
-            this.setInLove();
-            return true;
-        } else if (item.getId() == Item.GOLDEN_CARROT && !this.isBaby() && !this.isInLoveCooldown()) {
-            player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
-            this.level.addLevelSoundEvent(this, LevelSoundEventPacket.SOUND_EAT);
-            this.level.addParticle(new ItemBreakParticle(this.add(0,this.getMountedYOffset(),0),Item.get(Item.GOLDEN_CARROT)));
+            this.level.addParticle(new ItemBreakParticle(this.add(0,this.getMountedYOffset(),0), item));
             this.setInLove();
             return true;
         }
