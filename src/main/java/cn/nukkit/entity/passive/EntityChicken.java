@@ -110,8 +110,8 @@ public class EntityChicken extends EntityWalkingAnimal {
 
     @Override
     public boolean onInteract(Player player, Item item, Vector3 clickedPos) {
-        if (item.getId() == Item.SEEDS && item.getId() == Item.BEETROOT_SEEDS &&
-                item.getId() == Item.MELON_SEEDS && item.getId() == Item.PUMPKIN_SEEDS) {
+        if (item.getId() == Item.SEEDS || item.getId() == Item.BEETROOT_SEEDS ||
+                item.getId() == Item.MELON_SEEDS || item.getId() == Item.PUMPKIN_SEEDS) {
             if (!this.isBaby() && !this.isInLoveCooldown()) {
                 player.getInventory().decreaseCount(player.getInventory().getHeldItemIndex());
                 this.level.addParticle(new ItemBreakParticle(
