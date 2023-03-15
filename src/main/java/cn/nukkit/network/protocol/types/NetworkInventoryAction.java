@@ -199,6 +199,22 @@ public class NetworkInventoryAction {
                             this.windowId = Player.ANVIL_WINDOW_ID;
                             this.inventorySlot = 1;
                             break;
+                        case SmithingInventory.SMITHING_EQUIPMENT_UI_SLOT:
+                            if (player.getWindowById(Player.SMITHING_WINDOW_ID) == null) {
+                                player.getServer().getLogger().error("Player " + player.getName() + " does not have smithing table window open");
+                                return null;
+                            }
+                            this.windowId = Player.SMITHING_WINDOW_ID;
+                            this.inventorySlot = 0;
+                            break;
+                        case SmithingInventory.SMITHING_INGREDIENT_UI_SLOT:
+                            if (player.getWindowById(Player.SMITHING_WINDOW_ID) == null) {
+                                player.getServer().getLogger().error("Player " + player.getName() + " does not have smithing table window open");
+                                return null;
+                            }
+                            this.windowId = Player.SMITHING_WINDOW_ID;
+                            this.inventorySlot = 1;
+                            break;
                         case TradeInventory.TRADE_INPUT_A:
                             if(player.getTradeInventory() == null) {
                                 player.getServer().getLogger().error("Player " + player.getName() + " does not have trade window open");
@@ -285,22 +301,29 @@ public class NetworkInventoryAction {
                 }
 
                 if (this.windowId >= SOURCE_TYPE_ANVIL_OUTPUT && this.windowId <= SOURCE_TYPE_ANVIL_INPUT) {
-                    Inventory inv = player.getWindowById(Player.ANVIL_WINDOW_ID);
-
-                    if (!(inv instanceof AnvilInventory)) {
-                        player.getServer().getLogger().debug("Player " + player.getName() + " has no open anvil inventory");
+                    Inventory inv;
+                    if ((inv = player.getWindowById(Player.ANVIL_WINDOW_ID)) instanceof AnvilInventory) {
+                        AnvilInventory anvil = (AnvilInventory) inv;
+                        switch (this.windowId) {
+                            case SOURCE_TYPE_ANVIL_INPUT:
+                            case SOURCE_TYPE_ANVIL_MATERIAL:
+                            case SOURCE_TYPE_ANVIL_RESULT:
+                                return new RepairItemAction(this.oldItem, this.newItem, this.windowId);
+                        }
+                        return new SlotChangeAction(anvil, this.inventorySlot, this.oldItem, this.newItem);
+                    } else if (player.getWindowById(Player.SMITHING_WINDOW_ID) instanceof SmithingInventory) {
+                        switch (this.windowId) {
+                            case SOURCE_TYPE_ANVIL_INPUT:
+                            case SOURCE_TYPE_ANVIL_MATERIAL:
+                            case SOURCE_TYPE_ANVIL_OUTPUT:
+                            case SOURCE_TYPE_ANVIL_RESULT:
+                                return new SmithingItemAction(this.oldItem, this.newItem, this.inventorySlot);
+                        }
+                    } else {
+                        player.getServer().getLogger().debug("Player " + player.getName() + " has no open anvil or smithing inventory");
                         return null;
                     }
-                    AnvilInventory anvil = (AnvilInventory) inv;
 
-                    switch (this.windowId) {
-                        case SOURCE_TYPE_ANVIL_INPUT:
-                        case SOURCE_TYPE_ANVIL_MATERIAL:
-                        case SOURCE_TYPE_ANVIL_RESULT:
-                            return new RepairItemAction(this.oldItem, this.newItem, this.windowId);
-                    }
-
-                    return new SlotChangeAction(anvil, this.inventorySlot, this.oldItem, this.newItem);
                 }
 
                 if (this.windowId >= SOURCE_TYPE_ENCHANT_OUTPUT && this.windowId <= SOURCE_TYPE_ENCHANT_INPUT) {

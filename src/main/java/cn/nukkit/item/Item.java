@@ -1460,6 +1460,19 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
         return false;
     }
 
+    public final Item decrement(int amount) {
+        return increment(-amount);
+    }
+
+    public final Item increment(int amount) {
+        if (count + amount <= 0) {
+            return get(0);
+        }
+        Item cloned = clone();
+        cloned.count += amount;
+        return cloned;
+    }
+
     @Override
     public final boolean equals(Object item) {
         return item instanceof Item && this.equals((Item) item, true);

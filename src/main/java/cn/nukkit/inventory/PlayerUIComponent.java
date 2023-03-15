@@ -73,7 +73,7 @@ public class PlayerUIComponent extends BaseInventory {
 
     @Override
     public Set<Player> getViewers() {
-        return playerUI.viewers;
+        return playerUI.getViewers();
     }
 
     @Override
