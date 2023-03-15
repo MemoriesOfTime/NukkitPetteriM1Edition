@@ -2822,6 +2822,8 @@ public class Server {
         Entity.registerEntity("Axolotl", EntityAxolotl.class);
         Entity.registerEntity("GlowSquid", EntityGlowSquid.class);
         Entity.registerEntity("Allay", EntityAllay.class);
+        //TODO 骆驼正式加入时取消注释
+        //Entity.registerEntity("Camel", EntityCamel.class);
         //Vehicles
         Entity.registerEntity("MinecartRideable", EntityMinecartEmpty.class);
         Entity.registerEntity("MinecartChest", EntityMinecartChest.class);
