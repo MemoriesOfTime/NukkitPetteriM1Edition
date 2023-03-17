@@ -10,8 +10,6 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -39,7 +37,7 @@ public class Utils {
     /**
      * An empty damage array used when mobs have no attack damage.
      */
-    public static final int[] emptyDamageArray = new int[]{0, 0, 0, 0};
+    public static final int[] emptyDamageArray = new int[] { 0, 0, 0, 0 };
     /**
      * List of network ids of monsters. Currently used for example to check which entities will make players unable to sleep when nearby the bed.
      */
@@ -260,7 +258,7 @@ public class Utils {
         return newArray;
     }
 
-    public static <T, U, V> Map<U, V> getOrCreate(Map<T, Map<U, V>> map, T key) {
+    public static <T,U,V> Map<U,V> getOrCreate(Map<T, Map<U, V>> map, T key) {
         Map<U, V> existing = map.get(key);
         if (existing == null) {
             ConcurrentHashMap<U, V> toPut = new ConcurrentHashMap<>();
@@ -311,16 +309,16 @@ public class Utils {
             if (h == -1 || l == -1)
                 throw new IllegalArgumentException("contains illegal character for hexBinary: " + s);
 
-            out[(i >> 1)] = (byte) ((h << 4) + l);
+            out[(i >> 1)] = (byte)((h << 4) + l);
         }
 
         return out;
     }
 
-    private static int hexToBin(char ch) {
-        if ('0' <= ch && ch <= '9') return ch - '0';
-        if ('A' <= ch && ch <= 'F') return ch - 'A' + 10;
-        if ('a' <= ch && ch <= 'f') return ch - 'a' + 10;
+    private static int hexToBin( char ch ) {
+        if ('0' <= ch && ch <= '9')    return ch - '0';
+        if ('A' <= ch && ch <= 'F')    return ch - 'A' + 10;
+        if ('a' <= ch && ch <= 'f')    return ch - 'a' + 10;
         return -1;
     }
 
@@ -349,7 +347,7 @@ public class Utils {
         if (min == max) {
             return max;
         }
-        return min + random.nextDouble() * (max - min);
+        return min + random.nextDouble() * (max-min);
     }
 
     /**
@@ -373,108 +371,54 @@ public class Utils {
      * @return game version string
      */
     public static String getVersionByProtocol(int protocol) {
-        switch (protocol) {
-            case ProtocolInfo.v1_2_0:
-                return "1.2.0";
-            case ProtocolInfo.v1_2_5_11:
-            case ProtocolInfo.v1_2_5:
-                return "1.2.5";
-            case ProtocolInfo.v1_2_6:
-                return "1.2.6";
-            case ProtocolInfo.v1_2_7:
-                return "1.2.7";
-            case ProtocolInfo.v1_2_10:
-                return "1.2.10";
-            case ProtocolInfo.v1_2_13:
-            case ProtocolInfo.v1_2_13_11:
-                return "1.2.13";
-            case ProtocolInfo.v1_4_0:
-                return "1.4.0";
-            case ProtocolInfo.v1_5_0:
-                return "1.5.0";
-            case ProtocolInfo.v1_6_0_5:
-            case ProtocolInfo.v1_6_0:
-                return "1.6.0";
-            case ProtocolInfo.v1_7_0:
-                return "1.7.0";
-            case ProtocolInfo.v1_8_0:
-                return "1.8.0";
-            case ProtocolInfo.v1_9_0:
-                return "1.9.0";
-            case ProtocolInfo.v1_10_0:
-                return "1.10.0";
-            case ProtocolInfo.v1_11_0:
-                return "1.11.0";
-            case ProtocolInfo.v1_12_0:
-                return "1.12.0";
-            case ProtocolInfo.v1_13_0:
-                return "1.13.0";
-            case ProtocolInfo.v1_14_0:
-                return "1.14.0";
-            case ProtocolInfo.v1_14_60:
-                return "1.14.60";
-            case ProtocolInfo.v1_16_0:
-                return "1.16.0";
-            case ProtocolInfo.v1_16_20:
-                return "1.16.20";
-            case ProtocolInfo.v1_16_100_0:
-            case ProtocolInfo.v1_16_100_51:
-            case ProtocolInfo.v1_16_100_52:
-            case ProtocolInfo.v1_16_100:
-                return "1.16.100";
-            case ProtocolInfo.v1_16_200_51:
-            case ProtocolInfo.v1_16_200:
-                return "1.16.200";
-            case ProtocolInfo.v1_16_210_50:
-            case ProtocolInfo.v1_16_210_53:
-            case ProtocolInfo.v1_16_210:
-                return "1.16.210";
-            case ProtocolInfo.v1_16_220:
-                return "1.16.220";
-            case ProtocolInfo.v1_16_230_50:
-            case ProtocolInfo.v1_16_230:
-            case ProtocolInfo.v1_16_230_54:
-                return "1.16.230";
-            case ProtocolInfo.v1_17_0:
-                return "1.17.0";
-            case ProtocolInfo.v1_17_10:
-                return "1.17.10";
-            case ProtocolInfo.v1_17_20_20:
-                return "1.17.20";
-            case ProtocolInfo.v1_17_30:
-                return "1.17.30";
-            case ProtocolInfo.v1_17_40:
-                return "1.17.40";
-            case ProtocolInfo.v1_18_0:
-                return "1.18.0";
-            case ProtocolInfo.v1_18_10_26:
-            case ProtocolInfo.v1_18_10:
-                return "1.18.10";
-            case ProtocolInfo.v1_18_30:
-                return "1.18.30";
-            case ProtocolInfo.v1_19_0:
-                return "1.19.0";
-            case ProtocolInfo.v1_19_10:
-                return "1.19.10";
-            case ProtocolInfo.v1_19_20:
-                return "1.19.20";
-            case ProtocolInfo.v1_19_21:
-                return "1.19.21";
-            case ProtocolInfo.v1_19_30_23:
-            case ProtocolInfo.v1_19_30:
-                return "1.19.30";
-            case ProtocolInfo.v1_19_40:
-                return "1.19.40";
-            case ProtocolInfo.v1_19_50:
-                return "1.19.50";
-            case ProtocolInfo.v1_19_60:
-                return "1.19.60";
-            case ProtocolInfo.v1_19_63:
-                return "1.19.63";
+        return switch (protocol) {
+            case ProtocolInfo.v1_2_0 -> "1.2.0";
+            case ProtocolInfo.v1_2_5_11, ProtocolInfo.v1_2_5 -> "1.2.5";
+            case ProtocolInfo.v1_2_6 -> "1.2.6";
+            case ProtocolInfo.v1_2_7 -> "1.2.7";
+            case ProtocolInfo.v1_2_10 -> "1.2.10";
+            case ProtocolInfo.v1_2_13, ProtocolInfo.v1_2_13_11 -> "1.2.13";
+            case ProtocolInfo.v1_4_0 -> "1.4.0";
+            case ProtocolInfo.v1_5_0 -> "1.5.0";
+            case ProtocolInfo.v1_6_0_5, ProtocolInfo.v1_6_0 -> "1.6.0";
+            case ProtocolInfo.v1_7_0 -> "1.7.0";
+            case ProtocolInfo.v1_8_0 -> "1.8.0";
+            case ProtocolInfo.v1_9_0 -> "1.9.0";
+            case ProtocolInfo.v1_10_0 -> "1.10.0";
+            case ProtocolInfo.v1_11_0 -> "1.11.0";
+            case ProtocolInfo.v1_12_0 -> "1.12.0";
+            case ProtocolInfo.v1_13_0 -> "1.13.0";
+            case ProtocolInfo.v1_14_0 -> "1.14.0";
+            case ProtocolInfo.v1_14_60 -> "1.14.60";
+            case ProtocolInfo.v1_16_0 -> "1.16.0";
+            case ProtocolInfo.v1_16_20 -> "1.16.20";
+            case ProtocolInfo.v1_16_100_0, ProtocolInfo.v1_16_100_51, ProtocolInfo.v1_16_100_52, ProtocolInfo.v1_16_100 ->
+                    "1.16.100";
+            case ProtocolInfo.v1_16_200_51, ProtocolInfo.v1_16_200 -> "1.16.200";
+            case ProtocolInfo.v1_16_210_50, ProtocolInfo.v1_16_210_53, ProtocolInfo.v1_16_210 -> "1.16.210";
+            case ProtocolInfo.v1_16_220 -> "1.16.220";
+            case ProtocolInfo.v1_16_230_50, ProtocolInfo.v1_16_230, ProtocolInfo.v1_16_230_54 -> "1.16.230";
+            case ProtocolInfo.v1_17_0 -> "1.17.0";
+            case ProtocolInfo.v1_17_10 -> "1.17.10";
+            case ProtocolInfo.v1_17_20_20 -> "1.17.20";
+            case ProtocolInfo.v1_17_30 -> "1.17.30";
+            case ProtocolInfo.v1_17_40 -> "1.17.40";
+            case ProtocolInfo.v1_18_0 -> "1.18.0";
+            case ProtocolInfo.v1_18_10_26, ProtocolInfo.v1_18_10 -> "1.18.10";
+            case ProtocolInfo.v1_18_30 -> "1.18.30";
+            case ProtocolInfo.v1_19_0 -> "1.19.0";
+            case ProtocolInfo.v1_19_10 -> "1.19.10";
+            case ProtocolInfo.v1_19_20 -> "1.19.20";
+            case ProtocolInfo.v1_19_21 -> "1.19.21";
+            case ProtocolInfo.v1_19_30_23, ProtocolInfo.v1_19_30 -> "1.19.30";
+            case ProtocolInfo.v1_19_40 -> "1.19.40";
+            case ProtocolInfo.v1_19_50 -> "1.19.50";
+            case ProtocolInfo.v1_19_60 -> "1.19.60";
+            case ProtocolInfo.v1_19_63 -> "1.19.63";
+            case ProtocolInfo.v1_19_70_24, ProtocolInfo.v1_19_70 -> "1.19.70";
             //TODO Multiversion 添加新版本支持时修改这里
-            default:
-                throw new IllegalStateException("Invalid protocol: " + protocol);
-        }
+            default -> throw new IllegalStateException("Invalid protocol: " + protocol);
+        };
     }
 
     /**
@@ -485,7 +429,7 @@ public class Utils {
      * @return operating system/device name
      */
     public static String getOS(Player player) {
-        switch (player.getLoginChainData().getDeviceOS()) {
+        switch(player.getLoginChainData().getDeviceOS()) {
             case 1:
                 return "Android";
             case 2:
@@ -518,31 +462,4 @@ public class Utils {
                 return "Unknown";
         }
     }
-
-    public static <T> T sumObjectsAndGet(Class<T> clazz1, Class<T> clazz2) {
-        try {
-            for (Field field : clazz1.getDeclaredFields()) {
-                field.setAccessible(true);
-                Object value1 = field.get(clazz1);
-                Object value2 = field.get(clazz2);
-                if (value1 instanceof Integer v1 && value2 instanceof Integer v2) {
-                    var sum = v1 + v2;
-                    field.set(clazz1, sum);
-                }
-                if (value1 instanceof Long v1 && value2 instanceof Long v2) {
-                    var sum = v1 + v2;
-                    field.set(clazz1, sum);
-                }
-                if (value1 instanceof Double v1 && value2 instanceof Double v2) {
-                    var sum = BigDecimal.valueOf(v1).add(BigDecimal.valueOf(v2));
-                    field.set(clazz1, sum);
-                }
-            }
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return (T) clazz1;
-    }
-
-
 }
