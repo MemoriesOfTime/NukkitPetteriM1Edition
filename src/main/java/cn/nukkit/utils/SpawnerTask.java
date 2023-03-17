@@ -34,6 +34,7 @@ public class SpawnerTask implements Runnable {
     private boolean mobsNext;
 
     public SpawnerTask() {
+        this.registerAnimalSpawner(BatSpawner.class);
         this.registerAnimalSpawner(ChickenSpawner.class);
         this.registerAnimalSpawner(CowSpawner.class);
         this.registerAnimalSpawner(DolphinSpawner.class);
