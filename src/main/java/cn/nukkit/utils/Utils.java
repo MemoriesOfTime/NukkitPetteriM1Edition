@@ -481,7 +481,7 @@ public class Utils {
                 }
                 if (value1 instanceof Double v1 && value2 instanceof Double v2) {
                     var sum = BigDecimal.valueOf(v1).add(BigDecimal.valueOf(v2));
-                    field.set(clazz1, sum);
+                    field.set(clazz1, sum.doubleValue());
                 }
             }
         } catch (IllegalAccessException e) {
