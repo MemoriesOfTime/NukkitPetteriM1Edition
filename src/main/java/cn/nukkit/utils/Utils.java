@@ -481,7 +481,11 @@ public class Utils {
                 }
                 if (value1 instanceof Double v1 && value2 instanceof Double v2) {
                     var sum = BigDecimal.valueOf(v1).add(BigDecimal.valueOf(v2));
-                    field.set(clazz1, sum);
+                    field.set(clazz1, sum.doubleValue());
+                }
+                if (value1 instanceof Float v1 && value2 instanceof Float v2) {
+                    var sum = BigDecimal.valueOf(v1).add(BigDecimal.valueOf(v2));
+                    field.set(clazz1, sum.floatValue());
                 }
             }
         } catch (IllegalAccessException e) {
@@ -489,6 +493,5 @@ public class Utils {
         }
         return (T) clazz1;
     }
-
 
 }
