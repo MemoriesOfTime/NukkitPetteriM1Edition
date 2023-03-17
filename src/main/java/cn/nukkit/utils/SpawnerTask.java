@@ -8,6 +8,7 @@ import cn.nukkit.entity.Entity;
 import cn.nukkit.entity.mob.*;
 import cn.nukkit.entity.passive.EntityCod;
 import cn.nukkit.entity.passive.EntitySalmon;
+import cn.nukkit.entity.passive.EntityStrider;
 import cn.nukkit.event.entity.CreatureSpawnEvent;
 import cn.nukkit.level.GameRule;
 import cn.nukkit.level.Level;
@@ -193,7 +194,7 @@ public class SpawnerTask implements Runnable {
         if (max == 0) return false;
         int count = 0;
         for (Entity entity : level.entities.values()) {
-            if (entity.isAlive() && entity.getNetworkId() == networkId && new Vector3(player.x, entity.y, player.z).distanceSquared(entity) < 10000) { // 100 blocks
+            if (entity.isAlive() && entity.getNetworkId() == networkId && new Vector3(player.x, entity.y, player.z).distanceSquared(entity) < 16384) { // 128 blocks
                 count++;
                 if (count > max) {
                     return false;
@@ -213,7 +214,7 @@ public class SpawnerTask implements Runnable {
     public BaseEntity createEntity(Object type, Position pos) {
         BaseEntity entity = (BaseEntity) Entity.createEntity((String) type, pos);
         if (entity != null) {
-            if (!entity.isInsideOfSolid() && !tooNearOfPlayer(pos)) {
+            if (!entity.isInsideOfSolid()) {
                 CreatureSpawnEvent ev = new CreatureSpawnEvent(entity.getNetworkId(), pos, entity.namedTag, CreatureSpawnEvent.SpawnReason.NATURAL);
                 Server.getInstance().getPluginManager().callEvent(ev);
                 if (!ev.isCancelled()) {
@@ -228,21 +229,6 @@ public class SpawnerTask implements Runnable {
             }
         }
         return entity;
-    }
-
-    /**
-     * Check if mob spawn position is too close to player
-     *
-     * @param pos position
-     * @return whether the position is too close to player
-     */
-    private static boolean tooNearOfPlayer(Position pos) {
-        for (Player p : pos.getLevel().getPlayers().values()) {
-            if (p.distanceSquared(pos) < 196) { // 14 blocks
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -299,7 +285,7 @@ public class SpawnerTask implements Runnable {
                     while (true) {
                         checkY++;
                         checkNeedDegree--;
-                        if (checkY > 255 || checkY < 1 || level.getBlockIdAt(chunk, x, checkY, z) != Block.AIR) {
+                        if (checkY > 255 || level.getBlockIdAt(chunk, x, checkY, z) != Block.AIR) {
                             break;
                         }
                         if (checkNeedDegree <= 0) {
@@ -325,7 +311,7 @@ public class SpawnerTask implements Runnable {
                     while (true) {
                         checkY--;
                         checkNeedDegree--;
-                        if (checkY > 255 || checkY < 1 || level.getBlockIdAt(chunk, x, checkY, z) != Block.AIR) {
+                        if (checkY < 1 || level.getBlockIdAt(chunk, x, checkY, z) != Block.AIR) {
                             break;
                         }
                         if (checkNeedDegree <= 0) {
@@ -353,14 +339,15 @@ public class SpawnerTask implements Runnable {
             case EntityHoglin.NETWORK_ID:
                 return nether ? 4 : 0;
             case EntityGhast.NETWORK_ID:
+            case EntityMagmaCube.NETWORK_ID:
             case EntityBlaze.NETWORK_ID:
             case EntityWitherSkeleton.NETWORK_ID:
-            case EntityMagmaCube.NETWORK_ID:
+            case EntityStrider.NETWORK_ID:
                 return nether ? 2 : 0;
             case EntityEnderman.NETWORK_ID:
                 return end ? 10 : 2;
-            case EntityCod.NETWORK_ID:
             case EntitySalmon.NETWORK_ID:
+            case EntityCod.NETWORK_ID:
                 return end || nether ? 0 : 4;
             case EntityWitch.NETWORK_ID:
                 return end || nether ? 0 : 1;
