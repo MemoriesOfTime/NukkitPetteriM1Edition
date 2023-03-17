@@ -10,6 +10,8 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -37,7 +39,7 @@ public class Utils {
     /**
      * An empty damage array used when mobs have no attack damage.
      */
-    public static final int[] emptyDamageArray = new int[] { 0, 0, 0, 0 };
+    public static final int[] emptyDamageArray = new int[]{0, 0, 0, 0};
     /**
      * List of network ids of monsters. Currently used for example to check which entities will make players unable to sleep when nearby the bed.
      */
@@ -258,7 +260,7 @@ public class Utils {
         return newArray;
     }
 
-    public static <T,U,V> Map<U,V> getOrCreate(Map<T, Map<U, V>> map, T key) {
+    public static <T, U, V> Map<U, V> getOrCreate(Map<T, Map<U, V>> map, T key) {
         Map<U, V> existing = map.get(key);
         if (existing == null) {
             ConcurrentHashMap<U, V> toPut = new ConcurrentHashMap<>();
@@ -309,16 +311,16 @@ public class Utils {
             if (h == -1 || l == -1)
                 throw new IllegalArgumentException("contains illegal character for hexBinary: " + s);
 
-            out[(i >> 1)] = (byte)((h << 4) + l);
+            out[(i >> 1)] = (byte) ((h << 4) + l);
         }
 
         return out;
     }
 
-    private static int hexToBin( char ch ) {
-        if ('0' <= ch && ch <= '9')    return ch - '0';
-        if ('A' <= ch && ch <= 'F')    return ch - 'A' + 10;
-        if ('a' <= ch && ch <= 'f')    return ch - 'a' + 10;
+    private static int hexToBin(char ch) {
+        if ('0' <= ch && ch <= '9') return ch - '0';
+        if ('A' <= ch && ch <= 'F') return ch - 'A' + 10;
+        if ('a' <= ch && ch <= 'f') return ch - 'a' + 10;
         return -1;
     }
 
@@ -347,7 +349,7 @@ public class Utils {
         if (min == max) {
             return max;
         }
-        return min + random.nextDouble() * (max-min);
+        return min + random.nextDouble() * (max - min);
     }
 
     /**
@@ -429,7 +431,7 @@ public class Utils {
      * @return operating system/device name
      */
     public static String getOS(Player player) {
-        switch(player.getLoginChainData().getDeviceOS()) {
+        switch (player.getLoginChainData().getDeviceOS()) {
             case 1:
                 return "Android";
             case 2:
@@ -462,4 +464,31 @@ public class Utils {
                 return "Unknown";
         }
     }
+
+    public static <T> T sumObjectsAndGet(Class<? extends T> clazz1, Class<? extends T> clazz2) {
+        try {
+            for (Field field : clazz1.getDeclaredFields()) {
+                field.setAccessible(true);
+                Object value1 = field.get(clazz1);
+                Object value2 = field.get(clazz2);
+                if (value1 instanceof Integer v1 && value2 instanceof Integer v2) {
+                    var sum = v1 + v2;
+                    field.set(clazz1, sum);
+                }
+                if (value1 instanceof Long v1 && value2 instanceof Long v2) {
+                    var sum = v1 + v2;
+                    field.set(clazz1, sum);
+                }
+                if (value1 instanceof Double v1 && value2 instanceof Double v2) {
+                    var sum = BigDecimal.valueOf(v1).add(BigDecimal.valueOf(v2));
+                    field.set(clazz1, sum);
+                }
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return (T) clazz1;
+    }
+
+
 }
