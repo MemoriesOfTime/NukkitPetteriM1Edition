@@ -111,7 +111,7 @@ public class SmithingInventory extends FakeBlockUIComponent {
 
         this.clear(EQUIPMENT);
         this.clear(INGREDIENT);
-        playerUI.clear(50);
+        //playerUI.clear(50);
     }
 
     public Item getCurrentResult() {

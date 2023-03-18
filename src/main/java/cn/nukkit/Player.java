@@ -6609,6 +6609,19 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
         return "Player(name='" + getName() + "', location=" + super.toString() + ')';
     }
 
+    /**
+     * 将物品添加到玩家的主要库存中，并将任何多余的物品丢在地上。
+     * <p>
+     * Adds the items to the main player inventory and drops on the floor any excess.
+     *
+     * @param items The items to give to the player.
+     */
+    public void giveItem(Item... items) {
+        for (Item failed : getInventory().addItem(items)) {
+            getLevel().dropItem(this, failed);
+        }
+    }
+
     @Override
     public void setAirTicks(int ticks) {
         if (this.airTicks != ticks) {
