@@ -41,6 +41,7 @@ public class SpawnerTask implements Runnable {
         this.registerAnimalSpawner(DolphinSpawner.class);
         this.registerAnimalSpawner(DonkeySpawner.class);
         this.registerAnimalSpawner(HorseSpawner.class);
+        this.registerAnimalSpawner(LlamaSpawner.class);
         this.registerAnimalSpawner(MooshroomSpawner.class);
         this.registerAnimalSpawner(OcelotSpawner.class);
         this.registerAnimalSpawner(ParrotSpawner.class);
@@ -51,6 +52,7 @@ public class SpawnerTask implements Runnable {
         this.registerAnimalSpawner(SalmonSpawner.class);
         this.registerAnimalSpawner(SheepSpawner.class);
         this.registerAnimalSpawner(SquidSpawner.class);
+        this.registerAnimalSpawner(StriderSpawner.class);
         this.registerAnimalSpawner(TropicalFishSpawner.class);
         this.registerAnimalSpawner(TurtleSpawner.class);
         this.registerAnimalSpawner(WolfSpawner.class);
