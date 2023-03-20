@@ -7,9 +7,7 @@ import cn.nukkit.network.RakNetInterface;
 import cn.nukkit.network.protocol.BatchPacket;
 import cn.nukkit.network.protocol.DataPacket;
 import cn.nukkit.network.protocol.ProtocolInfo;
-import cn.nukkit.network.protocol.ServerToClientHandshakePacket;
 import cn.nukkit.utils.BinaryStream;
-import cn.nukkit.utils.EncryptionUtils;
 import com.google.common.base.Preconditions;
 import com.nukkitx.natives.sha256.Sha256;
 import com.nukkitx.natives.util.Natives;
@@ -30,7 +28,10 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import java.net.ProtocolException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -69,38 +70,28 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
         this.decryptionCipher = null;
     }
 
-    public synchronized void enableEncryption(SecretKey secretKey) {
-        Objects.requireNonNull(secretKey, "secretKey");
-        if (!secretKey.getAlgorithm().equals("AES")) {
-            throw new IllegalArgumentException("Invalid key algorithm");
-        } else if (this.encryptionCipher == null && this.decryptionCipher == null) {
-            this.agreedKey = secretKey;
-            boolean useGcm = this.player.protocol > ProtocolInfo.v1_16_210;
-            this.encryptionCipher = EncryptionUtils.createCipher(useGcm, true, secretKey);
-            this.decryptionCipher = EncryptionUtils.createCipher(useGcm, false, secretKey);
-        } else {
-            throw new IllegalStateException("Encryption has already been enabled");
-        }
+    @Override
+    public void setEncryption(SecretKey agreedKey, Cipher encryptionCipher, Cipher decryptionCipher) {
+        this.agreedKey = agreedKey;
+        this.encryptionCipher = encryptionCipher;
+        this.decryptionCipher = decryptionCipher;
     }
 
     @Override
     public void onEncapsulated(EncapsulatedPacket packet) {
         ByteBuf buffer = packet.getBuffer();
-
-        if (this.decryptionCipher != null) {
-            try {
-                ByteBuffer inBuffer = buffer.internalNioBuffer(buffer.readerIndex(), buffer.readableBytes());
-                ByteBuffer outBuffer = inBuffer.duplicate();
-                this.decryptionCipher.update(inBuffer, outBuffer);
-                buffer.writerIndex(buffer.writerIndex() - 8);
-                buffer.markReaderIndex();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to decrypt packet", e);
-            }
-        }
-
         short packetId = buffer.readUnsignedByte();
         if (packetId == 0xfe) {
+            if (this.decryptionCipher != null) {
+                try {
+                    ByteBuffer inBuffer = buffer.nioBuffer();
+                    ByteBuffer outBuffer = inBuffer.duplicate();
+                    this.decryptionCipher.update(inBuffer, outBuffer);
+                } catch (Exception e) {
+                    throw new RuntimeException("Unable to decrypt packet", e);
+                }
+            }
+
             byte[] packetBuffer = new byte[buffer.readableBytes()];
             buffer.readBytes(packetBuffer);
 
@@ -184,17 +175,13 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
         List<DataPacket> toBatch = new ObjectArrayList<>();
         DataPacket packet;
         while ((packet = this.outbound.poll()) != null) {
-            if (packet.pid() == ProtocolInfo.BATCH_PACKET || packet instanceof ServerToClientHandshakePacket) {
+            if (packet.pid() == ProtocolInfo.BATCH_PACKET) {
                 if (!toBatch.isEmpty()) {
                     this.sendPackets(toBatch);
                     toBatch.clear();
                 }
 
-                if (packet instanceof ServerToClientHandshakePacket) {
-                    this.sendPacket(packet.getBuffer(), false);
-                }else {
-                    this.sendPacket(((BatchPacket) packet).payload);
-                }
+                this.sendPacket(((BatchPacket) packet).payload);
             } else {
                 toBatch.add(packet);
             }
@@ -235,14 +222,10 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
     }
 
     private void sendPacket(byte[] payload) {
-        this.sendPacket(payload, false);
-    }
-
-    private void sendPacket(byte[] payload, boolean encrypt) {
         ByteBuf byteBuf = ByteBufAllocator.DEFAULT.ioBuffer(1 + payload.length + 8);
         byteBuf.writeByte(0xfe);
 
-        if (this.encryptionCipher != null && encrypt) {
+        if (this.encryptionCipher != null) {
             try {
                 ByteBuf originalByteBuf = Unpooled.wrappedBuffer(payload);
                 ByteBuffer trailer = ByteBuffer.wrap(this.generateTrailer(originalByteBuf));

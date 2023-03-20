@@ -479,7 +479,7 @@ public class Server {
     /**
      * Network encryption
      */
-    public boolean encryption;
+    public boolean encryptionEnabled;
 
     Server(final String filePath, String dataPath, String pluginPath, boolean loadPlugins, boolean debug) {
         Preconditions.checkState(instance == null, "Already initialized!");
@@ -3010,7 +3010,7 @@ public class Server {
                 break;
         }
         this.serverAuthoritativeBlockBreaking = this.getPropertyBoolean("server-authoritative-block-breaking", true);
-        this.encryption = this.getPropertyBoolean("encryption", true);
+        this.encryptionEnabled = this.getPropertyBoolean("encryption", true);
         this.c_s_spawnThreshold = (int) Math.ceil(Math.sqrt(this.spawnThreshold));
         try {
             this.gamemode = this.getPropertyInt("gamemode", 0) & 0b11;

@@ -60,6 +60,7 @@ import cn.nukkit.nbt.NBTIO;
 import cn.nukkit.nbt.tag.*;
 import cn.nukkit.network.CompressionProvider;
 import cn.nukkit.network.SourceInterface;
+import cn.nukkit.network.encryption.PrepareEncryptionTask;
 import cn.nukkit.network.protocol.*;
 import cn.nukkit.network.protocol.types.*;
 import cn.nukkit.network.session.NetworkPlayerSession;
@@ -2688,20 +2689,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                     Player playerInstance = this;
                     this.verified = true;
 
-                    if (this.server.encryption) {
-                        try {
-                            byte[] token = EncryptionUtils.generateRandomToken();
-
-                            ServerToClientHandshakePacket pk = new ServerToClientHandshakePacket();
-                            pk.setJwt(EncryptionUtils.createHandshakeJwt(ClientChainData.getPrivateKeyPair(), token).serialize());
-                            this.forceDataPacket(pk, null);
-
-                            this.getNetworkSession().enableEncryption(EncryptionUtils.getSecretKey(ClientChainData.getPrivateKeyPair().getPrivate(), this.loginChainData.getIdentityECPublicKey(), token));
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to enable encryption", e);
-                        }
-                    }
-
                     this.preLoginEventTask = new AsyncTask() {
                         private PlayerAsyncPreLoginEvent event;
 
@@ -2730,6 +2717,27 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                     };
 
                     this.server.getScheduler().scheduleAsyncTask(this.preLoginEventTask);
+
+                    if (this.server.encryptionEnabled) {
+                        this.getServer().getScheduler().scheduleAsyncTask(new PrepareEncryptionTask(this) {
+                            @Override
+                            public void onCompletion(Server server) {
+                                if (!connected) {
+                                    return;
+                                }
+                                if (this.getHandshakeJwt() == null || this.getEncryptionKey() == null || this.getEncryptionCipher() == null || this.getDecryptionCipher() == null) {
+                                    close("", "Network Encryption error");
+                                    return;
+                                }
+                                ServerToClientHandshakePacket pk = new ServerToClientHandshakePacket();
+                                pk.setJwt(this.getHandshakeJwt());
+                                forceDataPacket(pk, () -> {
+                                    getNetworkSession().setEncryption(this.getEncryptionKey(), this.getEncryptionCipher(), this.getDecryptionCipher());
+                                });
+                            }
+                        });
+                    }
+
                     this.processLogin();
                     break;
                 case ProtocolInfo.RESOURCE_PACK_CLIENT_RESPONSE_PACKET:

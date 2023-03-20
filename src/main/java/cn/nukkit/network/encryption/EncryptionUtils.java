@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package cn.nukkit.utils;
+package cn.nukkit.network.encryption;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
