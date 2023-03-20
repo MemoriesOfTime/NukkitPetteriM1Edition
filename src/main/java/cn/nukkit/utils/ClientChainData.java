@@ -171,6 +171,7 @@ public final class ClientChainData implements LoginChainData {
     }
 
     private String identityPublicKey;
+
     private long clientId;
     private String serverAddress;
     private String deviceModel;

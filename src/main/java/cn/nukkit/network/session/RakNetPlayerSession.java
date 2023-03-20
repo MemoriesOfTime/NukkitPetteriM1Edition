@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Log4j2
 public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionListener {
 
-    private static final ThreadLocal<Sha256> HASH_LOCAL = ThreadLocal.withInitial(Natives.SHA_256::get);
+    private static final ThreadLocal<Sha256> HASH_LOCAL = ThreadLocal.withInitial(Natives.SHA_256);
 
     private final RakNetInterface server;
     private final RakNetServerSession session;
