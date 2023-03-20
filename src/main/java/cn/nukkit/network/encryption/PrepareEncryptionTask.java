@@ -10,9 +10,6 @@ import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 
-/**
- * @author LT_Name
- */
 public class PrepareEncryptionTask extends AsyncTask {
 
     private final Player player;
