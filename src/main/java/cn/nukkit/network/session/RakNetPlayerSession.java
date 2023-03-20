@@ -20,6 +20,7 @@ import com.nukkitx.network.raknet.RakNetState;
 import com.nukkitx.network.util.DisconnectReason;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.util.internal.PlatformDependent;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.extern.log4j.Log4j2;
@@ -238,27 +239,25 @@ public class RakNetPlayerSession implements NetworkPlayerSession, RakNetSessionL
     }
 
     private void sendPacket(byte[] payload, boolean encrypt) {
-        //TODO 修复
-        ByteBuf compressed = ByteBufAllocator.DEFAULT.ioBuffer(payload.length);
-        compressed.writeBytes(payload);
-
-        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.ioBuffer(1 + compressed.readableBytes() + 8);
+        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.ioBuffer(1 + payload.length + 8);
         byteBuf.writeByte(0xfe);
 
         if (this.encryptionCipher != null && encrypt) {
             try {
-                ByteBuffer trailer = ByteBuffer.wrap(this.generateTrailer(compressed));
-                ByteBuffer outBuffer = byteBuf.internalNioBuffer(1, compressed.readableBytes() + 8);
-                ByteBuffer inBuffer = compressed.internalNioBuffer(compressed.readerIndex(), compressed.readableBytes());
+                ByteBuf originalByteBuf = Unpooled.wrappedBuffer(payload);
+                ByteBuffer trailer = ByteBuffer.wrap(this.generateTrailer(originalByteBuf));
+                ByteBuffer outBuffer = byteBuf.internalNioBuffer(1, originalByteBuf.readableBytes() + 8);
+                ByteBuffer inBuffer = originalByteBuf.internalNioBuffer(originalByteBuf.readerIndex(), originalByteBuf.readableBytes());
                 this.encryptionCipher.update(inBuffer, outBuffer);
                 this.encryptionCipher.update(trailer, outBuffer);
-                byteBuf.writerIndex(byteBuf.writerIndex() + compressed.readableBytes() + 8);
+                byteBuf.writerIndex(byteBuf.writerIndex() + originalByteBuf.readableBytes() + 8);
             } catch (Exception e) {
                 log.error("Unable to encrypt packet", e);
             }
         }else {
             byteBuf.writeBytes(payload);
         }
+
         this.session.send(byteBuf);
     }
 
