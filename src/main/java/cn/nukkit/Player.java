@@ -307,7 +307,16 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
     /**
      * Packets that can be received before the player has logged in
      */
-    private static final List<Byte> PRE_LOGIN_PACKETS = Arrays.asList(ProtocolInfo.BATCH_PACKET, ProtocolInfo.LOGIN_PACKET, ProtocolInfo.REQUEST_CHUNK_RADIUS_PACKET, ProtocolInfo.SET_LOCAL_PLAYER_AS_INITIALIZED_PACKET, ProtocolInfo.RESOURCE_PACK_CHUNK_REQUEST_PACKET, ProtocolInfo.RESOURCE_PACK_CLIENT_RESPONSE_PACKET, ProtocolInfo.CLIENT_CACHE_STATUS_PACKET, ProtocolInfo.PACKET_VIOLATION_WARNING_PACKET, ProtocolInfo.REQUEST_NETWORK_SETTINGS_PACKET);
+    private static final List<Byte> PRE_LOGIN_PACKETS = Arrays.asList(
+            ProtocolInfo.BATCH_PACKET, ProtocolInfo.LOGIN_PACKET,
+            ProtocolInfo.REQUEST_CHUNK_RADIUS_PACKET,
+            ProtocolInfo.SET_LOCAL_PLAYER_AS_INITIALIZED_PACKET,
+            ProtocolInfo.RESOURCE_PACK_CHUNK_REQUEST_PACKET,
+            ProtocolInfo.RESOURCE_PACK_CLIENT_RESPONSE_PACKET,
+            ProtocolInfo.CLIENT_CACHE_STATUS_PACKET,
+            ProtocolInfo.PACKET_VIOLATION_WARNING_PACKET,
+            ProtocolInfo.REQUEST_NETWORK_SETTINGS_PACKET,
+            ProtocolInfo.CLIENT_TO_SERVER_HANDSHAKE_PACKET);
 
     public int getStartActionTick() {
         return startAction;
@@ -2715,30 +2724,11 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                             }
                         }
                     };
-
-                    this.server.getScheduler().scheduleAsyncTask(this.preLoginEventTask);
-
-                    if (this.server.encryptionEnabled) {
-                        this.getServer().getScheduler().scheduleAsyncTask(new PrepareEncryptionTask(this) {
-                            @Override
-                            public void onCompletion(Server server) {
-                                if (!connected) {
-                                    return;
-                                }
-                                if (this.getHandshakeJwt() == null || this.getEncryptionKey() == null || this.getEncryptionCipher() == null || this.getDecryptionCipher() == null) {
-                                    close("", "Network Encryption error");
-                                    return;
-                                }
-                                ServerToClientHandshakePacket pk = new ServerToClientHandshakePacket();
-                                pk.setJwt(this.getHandshakeJwt());
-                                forceDataPacket(pk, () -> {
-                                    getNetworkSession().setEncryption(this.getEncryptionKey(), this.getEncryptionCipher(), this.getDecryptionCipher());
-                                });
-                            }
-                        });
-                    }
-
                     this.processLogin();
+                    break;
+                case ProtocolInfo.CLIENT_TO_SERVER_HANDSHAKE_PACKET:
+                    //TODO
+                    this.getServer().getLogger().info("接收 CLIENT_TO_SERVER_HANDSHAKE_PACKET");
                     break;
                 case ProtocolInfo.RESOURCE_PACK_CLIENT_RESPONSE_PACKET:
                     ResourcePackClientResponsePacket responsePacket = (ResourcePackClientResponsePacket) packet;
@@ -2786,6 +2776,10 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                             break;
                         case ResourcePackClientResponsePacket.STATUS_COMPLETED:
                             this.shouldLogin = true;
+
+                            if (this.server.encryptionEnabled) {
+                                this.server.getScheduler().scheduleAsyncTask(new PrepareEncryptionTask(this));
+                            }
 
                             if (this.preLoginEventTask.isFinished()) {
                                 this.preLoginEventTask.onCompletion(server);
