@@ -31,6 +31,23 @@ public final class EncryptionUtils {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final KeyPairGenerator KEY_PAIR_GEN;
 
+    static {
+        // DO NOT REMOVE THIS
+        // Since Java 8u231, secp384r1 is deprecated and will throw an exception.
+        String namedGroups = System.getProperty("jdk.tls.namedGroups");
+        System.setProperty("jdk.tls.namedGroups", namedGroups == null || namedGroups.isEmpty() ? "secp384r1" : ", secp384r1");
+
+        try {
+            KEY_PAIR_GEN = KeyPairGenerator.getInstance("EC");
+            KEY_PAIR_GEN.initialize(new ECGenParameterSpec("secp384r1"));
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
+            throw new AssertionError("Unable to initialize required encryption", e);
+        }
+    }
+
+    private EncryptionUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
     public static ECPublicKey generateKey(String b64) throws NoSuchAlgorithmException, InvalidKeySpecException {
         return (ECPublicKey)KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(b64)));
@@ -54,8 +71,8 @@ public final class EncryptionUtils {
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException var6) {
-            throw new AssertionError(var6);
+        } catch (NoSuchAlgorithmException e) {
+            throw new AssertionError(e);
         }
 
         digest.update(token);
@@ -68,8 +85,8 @@ public final class EncryptionUtils {
         KeyAgreement agreement;
         try {
             agreement = KeyAgreement.getInstance("ECDH");
-        } catch (NoSuchAlgorithmException var4) {
-            throw new AssertionError(var4);
+        } catch (NoSuchAlgorithmException e) {
+            throw new AssertionError(e);
         }
 
         agreement.init(localPrivateKey);
@@ -79,9 +96,12 @@ public final class EncryptionUtils {
 
     public static JWSObject createHandshakeJwt(KeyPair serverKeyPair, byte[] token) throws JOSEException {
         URI x5u = URI.create(Base64.getEncoder().encodeToString(serverKeyPair.getPublic().getEncoded()));
-        JWTClaimsSet claimsSet = (new JWTClaimsSet.Builder()).claim("salt", Base64.getEncoder().encodeToString(token)).build();
-        SignedJWT jwt = new SignedJWT((new JWSHeader.Builder(JWSAlgorithm.ES384)).x509CertURL(x5u).build(), claimsSet);
-        signJwt(jwt, (ECPrivateKey)serverKeyPair.getPrivate());
+
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder().claim("salt", Base64.getEncoder().encodeToString(token)).build();
+        SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.ES384).x509CertURL(x5u).build(), claimsSet);
+
+        signJwt(jwt, (ECPrivateKey) serverKeyPair.getPrivate());
+
         return jwt;
     }
 
@@ -104,27 +124,10 @@ public final class EncryptionUtils {
                 iv = Arrays.copyOf(key.getEncoded(), 16);
                 transformation = "AES/CFB8/NoPadding";
             }
-
             Cipher cipher = Cipher.getInstance(transformation);
-            cipher.init(encrypt ? 1 : 2, key, new IvParameterSpec(iv));
+            cipher.init(encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
             return cipher;
-        } catch (NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchAlgorithmException var6) {
-            throw new AssertionError("Unable to initialize required encryption", var6);
-        }
-    }
-
-    private EncryptionUtils() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-    }
-
-    static {
-        String namedGroups = System.getProperty("jdk.tls.namedGroups");
-        System.setProperty("jdk.tls.namedGroups", namedGroups != null && !namedGroups.isEmpty() ? ", secp384r1" : "secp384r1");
-
-        try {
-            KEY_PAIR_GEN = KeyPairGenerator.getInstance("EC");
-            KEY_PAIR_GEN.initialize(new ECGenParameterSpec("secp384r1"));
-        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new AssertionError("Unable to initialize required encryption", e);
         }
     }
