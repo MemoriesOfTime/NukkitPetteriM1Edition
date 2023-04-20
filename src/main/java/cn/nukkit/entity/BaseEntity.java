@@ -701,7 +701,7 @@ public abstract class BaseEntity extends EntityCreature implements EntityAgeable
         return null;
     }
 
-    protected void lookAt(Vector3 target) {
+    public void lookAt(Vector3 target) {
         double dx = this.x - target.x;
         double dy = this.y - target.y;
         double dz = this.z - target.z;
@@ -714,7 +714,7 @@ public abstract class BaseEntity extends EntityCreature implements EntityAgeable
         this.setRotation(yaw, pitch);
     }
 
-    protected EntityHuman getNearbyHuman() {
+    public EntityHuman getNearbyHuman() {
         AxisAlignedBB bb = this.boundingBox.clone().expand(2.5, 2.5, 2.5);
         EntityHuman human = null;
         for (Entity collidingEntity : this.level.getCollidingEntities(bb)) {
