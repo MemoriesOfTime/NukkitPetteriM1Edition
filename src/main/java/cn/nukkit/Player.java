@@ -2724,11 +2724,33 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                             }
                         }
                     };
-                    this.processLogin();
+                    this.server.getScheduler().scheduleAsyncTask(this.preLoginEventTask);
+                    if (this.server.encryptionEnabled) {
+                        this.server.getScheduler().scheduleAsyncTask(new PrepareEncryptionTask(this) {
+                            @Override
+                            public void onCompletion(Server server) {
+                                if (!playerInstance.isConnected()) {
+                                    return;
+                                }
+                                if (this.getHandshakeJwt() == null || this.getEncryptionKey() == null || this.getEncryptionCipher() == null || this.getDecryptionCipher() == null) {
+                                    playerInstance.close("", "Network Encryption error");
+                                    return;
+                                }
+                                ServerToClientHandshakePacket pk = new ServerToClientHandshakePacket();
+                                pk.setJwt(this.getHandshakeJwt());
+                                playerInstance.forceDataPacket(pk, () -> {
+                                    playerInstance.getNetworkSession().setEncryption(this.getEncryptionKey(), this.getEncryptionCipher(), this.getDecryptionCipher());
+                                });
+                            }
+                        });
+                    } else {
+                        this.processLogin();
+                    }
                     break;
                 case ProtocolInfo.CLIENT_TO_SERVER_HANDSHAKE_PACKET:
-                    //TODO
-                    this.getServer().getLogger().info("接收 CLIENT_TO_SERVER_HANDSHAKE_PACKET");
+                    if (this.server.encryptionEnabled) {
+                        this.processLogin();
+                    }
                     break;
                 case ProtocolInfo.RESOURCE_PACK_CLIENT_RESPONSE_PACKET:
                     ResourcePackClientResponsePacket responsePacket = (ResourcePackClientResponsePacket) packet;
@@ -2776,10 +2798,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                             break;
                         case ResourcePackClientResponsePacket.STATUS_COMPLETED:
                             this.shouldLogin = true;
-
-                            if (this.server.encryptionEnabled) {
-                                this.server.getScheduler().scheduleAsyncTask(new PrepareEncryptionTask(this));
-                            }
 
                             if (this.preLoginEventTask.isFinished()) {
                                 this.preLoginEventTask.onCompletion(server);

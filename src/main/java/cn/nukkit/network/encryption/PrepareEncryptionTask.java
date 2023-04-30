@@ -3,7 +3,6 @@ package cn.nukkit.network.encryption;
 import cn.nukkit.Player;
 import cn.nukkit.Server;
 import cn.nukkit.network.protocol.ProtocolInfo;
-import cn.nukkit.network.protocol.ServerToClientHandshakePacket;
 import cn.nukkit.scheduler.AsyncTask;
 import com.nimbusds.jose.jwk.Curve;
 
@@ -47,19 +46,7 @@ public class PrepareEncryptionTask extends AsyncTask {
 
     @Override
     public void onCompletion(Server server) {
-        if (!this.player.isConnected()) {
-            return;
-        }
-        if (this.getHandshakeJwt() == null || this.getEncryptionKey() == null || this.getEncryptionCipher() == null || this.getDecryptionCipher() == null) {
-            this.player.close("", "Network Encryption error");
-            return;
-        }
-        ServerToClientHandshakePacket pk = new ServerToClientHandshakePacket();
-        pk.setJwt(this.getHandshakeJwt());
-        this.player.forceDataPacket(pk, () -> {
-            this.player.getNetworkSession().setEncryption(this.getEncryptionKey(), this.getEncryptionCipher(), this.getDecryptionCipher());
-            this.player.getServer().getLogger().info("完成ServerToClientHandshakePacket发送 完成密钥设置");
-        });
+
     }
 
     public String getHandshakeJwt() {
