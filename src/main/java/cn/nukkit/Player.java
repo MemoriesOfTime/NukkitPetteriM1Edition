@@ -3907,7 +3907,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                                 break packetswitch;
                             }
 
-                            if (this.isBlocking()) {
+                            if (type != InventoryTransactionPacket.USE_ITEM_ACTION_CLICK_BLOCK && this.isBlocking()) {
                                 this.setBlocking(false);
                             }
 
