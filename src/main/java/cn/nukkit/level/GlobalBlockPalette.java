@@ -569,6 +569,7 @@ public class GlobalBlockPalette {
             case ProtocolInfo.v1_19_70_24:
             case ProtocolInfo.v1_19_70:
             case ProtocolInfo.v1_19_80:
+            case ProtocolInfo.v1_20_0:
                 return legacyToRuntimeId(protocol, id, meta, legacyId);
             // Multiversion
             default:
@@ -606,6 +607,7 @@ public class GlobalBlockPalette {
             case ProtocolInfo.v1_19_70:
                 return legacyToRuntimeId575;
             case ProtocolInfo.v1_19_80:
+            case ProtocolInfo.v1_20_0:
                 return legacyToRuntimeId582;
             default:
                 throw new IllegalArgumentException("Tried to get legacyToRuntimeIdMap for unsupported protocol version: " + protocol);
