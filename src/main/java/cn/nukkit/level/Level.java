@@ -3099,7 +3099,7 @@ public class Level implements ChunkManager, Metadatable {
         while (y > 0) {
             Block block = getBlock(new Vector3(x, y, z));
             if (block.getColor() == null) return null;
-            if (block.getColor().getAlpha() == 0x00 || block instanceof BlockWater) {
+            if (block.getColor().getAlpha() == 0x00 || (y < 62 && block instanceof BlockWater)) {
                 y--;
             } else {
                 return block;
