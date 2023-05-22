@@ -3722,35 +3722,20 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                         getServer().getPluginManager().callEvent(event = new PlayerMapInfoRequestEvent(this, mapItem));
 
                         if (!event.isCancelled()) {
-                            ItemMap map = (ItemMap) mapItem;
-                            if (map.trySendImage(this)) {
+                            if (mapItem.trySendImage(this)) {
                                 return;
                             }
 
-                            map.renderMap(this.getLevel(), (this.getFloorX() / 128) << 7, (this.getFloorZ() / 128) << 7, 1);
-                            map.sendImage(this);
-
-                            /*try {
-                                BufferedImage image = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
-                                Graphics2D graphics = image.createGraphics();
-
-                                int worldX = (this.getFloorX() / 128) << 7;
-                                int worldZ = (this.getFloorZ() / 128) << 7;
-                                for (int x = 0; x < 128; x++) {
-                                    for (int y = 0; y < 128; y++) {
-                                        graphics.setColor(new Color(this.getLevel().getMapColorAt(worldX + x, worldZ + y).getRGB()));
-                                        graphics.fillRect(x, y, x + 1, y + 1);
-                                    }
+                            ItemMap finalMapItem = mapItem;
+                            this.server.getScheduler().scheduleAsyncTask(new AsyncTask() {
+                                @Override
+                                public void onRun() {
+                                    finalMapItem.renderMap(Player.this.getLevel(), (Player.this.getFloorX() / 128) << 7, (Player.this.getFloorZ() / 128) << 7, 1);
+                                    finalMapItem.sendImage(Player.this);
                                 }
-
-                                map.setImage(image);
-                                map.sendImage(this);
-                            } catch (Exception ex) {
-                                this.getServer().getLogger().debug("There was an error while generating map image", ex);
-                            }*/
+                            });
                         }
                     }
-
                     break;
                 case ProtocolInfo.LEVEL_SOUND_EVENT_PACKET:
                 case ProtocolInfo.LEVEL_SOUND_EVENT_PACKET_V1:
