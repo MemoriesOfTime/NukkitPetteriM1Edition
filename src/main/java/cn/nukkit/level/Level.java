@@ -3008,9 +3008,9 @@ public class Level implements ChunkManager, Metadatable {
     }
 
     public BlockColor getMapColorAt(int x, int z) {
-        var color = BlockColor.VOID_BLOCK_COLOR;
+        BlockColor color = BlockColor.VOID_BLOCK_COLOR;
 
-        var block = getMapColoredBlockAt(x, z);
+        Block block = getMapColoredBlockAt(x, z);
         if (block == null) {
             return color;
         }
@@ -3021,45 +3021,42 @@ public class Level implements ChunkManager, Metadatable {
         }
 
         //在z轴存在高度差的地方，颜色变深或变浅
-        var nzy = getMapColoredBlockAt(x, z - 1);
-        if (nzy == null) return color;
+        Block nzy = getMapColoredBlockAt(x, z - 1);
+        if (nzy == null) {
+            return color;
+        }
         if (nzy.getFloorY() > block.getFloorY()) {
-            color = switch (nzy.getFloorY() - block.getFloorY()) {
-                case 1 -> darker(color, 0.8);
-                case 2 -> darker(color, 0.75);
-                case 3 -> darker(color, 0.7);
-                case 4 -> darker(color, 0.65);
-                default -> darker(color, 0.6);
-            };
+            color = darker(color, 0.85 - Math.min(5, nzy.getFloorY() - block.getFloorY()) * 0.05);
         } else if (nzy.getFloorY() < block.getFloorY()) {
-            color = switch (block.getFloorY() - nzy.getFloorY()) {
-                case 1 -> brighter(color, 0.8);
-                case 2 -> brighter(color, 0.75);
-                case 3 -> brighter(color, 0.7);
-                case 4 -> brighter(color, 0.65);
-                default -> brighter(color, 0.6);
-            };
+            color = brighter(color, 0.85 - Math.min(5, block.getFloorY() - nzy.getFloorY()) * 0.05);
         }
 
-        var deltaY = block.y - 128;
+        double deltaY = block.y - 128;
         if (deltaY > 0) {
             color = brighter(color, 1 - deltaY / (192 * 3));
         } else if (deltaY < 0) {
             color = darker(color, 1 - (-deltaY) / (192 * 3));
         }
 
-        if (block.y < 62 && (block.getSide(BlockFace.UP) instanceof BlockWater || block.getSideAtLayer(1, BlockFace.UP) instanceof BlockWater)) {
+        if ((block.getSide(BlockFace.UP) instanceof BlockWater || block.getSideAtLayer(1, BlockFace.UP) instanceof BlockWater)) {
+            int r1 = color.getRed();
+            int g1 = color.getGreen();
+            int b1 = color.getBlue();
             //在水下
-            //海平面为62格。离海平面越远颜色越接近海洋颜色
-            var depth = 62 - block.y;
-            if (depth > 96) return BlockColor.WATER_BLOCK_COLOR;
-            var r1 = color.getRed();
-            var g1 = color.getGreen();
-            var b1 = color.getBlue();
-            b1 = BlockColor.WATER_BLOCK_COLOR.getBlue();
-            var radio = depth / 96.0;
-            r1 += (BlockColor.WATER_BLOCK_COLOR.getRed() - r1) * radio;
-            g1 += (BlockColor.WATER_BLOCK_COLOR.getGreen() - g1) * radio;
+            if (block.y < 62) {
+                //海平面为62格。离海平面越远颜色越接近海洋颜色
+                double depth = 62 - block.y;
+                if (depth > 96) return BlockColor.WATER_BLOCK_COLOR;
+                b1 = BlockColor.WATER_BLOCK_COLOR.getBlue();
+                double radio = depth / 96.0;
+                r1 += (BlockColor.WATER_BLOCK_COLOR.getRed() - r1) * radio;
+                g1 += (BlockColor.WATER_BLOCK_COLOR.getGreen() - g1) * radio;
+            } else {
+                //湖泊 or 河流
+                b1 = BlockColor.WATER_BLOCK_COLOR.getBlue();
+                r1 += (BlockColor.WATER_BLOCK_COLOR.getRed() - r1) * 0.3;
+                g1 += (BlockColor.WATER_BLOCK_COLOR.getGreen() - g1) * 0.3;
+            }
             color = new BlockColor(r1, g1, b1);
         }
 
