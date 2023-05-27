@@ -118,10 +118,10 @@ public class ItemMap extends Item {
         try {
             for (int x = 0; x < 128 * zoom; x += zoom) {
                 for (int z = 0; z < 128 * zoom; z += zoom) {
-                    pixels[(x * 128 + z) / zoom] = level.getMapColorAt(centerX + x, centerZ + z).getRGB();
+                    pixels[(x * 128 + z) / zoom] = level.getMapColorAt(centerX + x, centerZ + z).getARGB();
                 }
             }
-            BufferedImage image = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
+            BufferedImage image = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
             image.setRGB(0, 0, 128, 128, pixels, 0, 128);
 
             this.setImage(image);

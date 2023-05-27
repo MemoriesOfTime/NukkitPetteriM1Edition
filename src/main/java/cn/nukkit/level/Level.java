@@ -3007,18 +3007,17 @@ public class Level implements ChunkManager, Metadatable {
         return this.getChunk(x >> 4, z >> 4, true).getHighestBlockAt(x & 0x0f, z & 0x0f, cache);
     }
 
-    protected static final BlockColor VOID_BLOCK_COLOR = new BlockColor(BlockColor.VOID_BLOCK_COLOR.getRGB());
-    protected static final BlockColor WATER_BLOCK_COLOR = new BlockColor(BlockColor.WATER_BLOCK_COLOR.getRGB());
-
     public BlockColor getMapColorAt(int x, int z) {
-        var color = VOID_BLOCK_COLOR;
+        var color = BlockColor.VOID_BLOCK_COLOR;
 
         var block = getMapColoredBlockAt(x, z);
-        if (block == null) return color;
+        if (block == null) {
+            return color;
+        }
         if (block instanceof BlockGlass) {
             color = this.getGrassColorAt(x, z);
         } else {
-            color = new BlockColor(block.getColor().getRGB());
+            color = new BlockColor(block.getColor().getARGB(), true);
         }
 
         //在z轴存在高度差的地方，颜色变深或变浅
@@ -3053,14 +3052,14 @@ public class Level implements ChunkManager, Metadatable {
             //在水下
             //海平面为62格。离海平面越远颜色越接近海洋颜色
             var depth = 62 - block.y;
-            if (depth > 96) return WATER_BLOCK_COLOR;
+            if (depth > 96) return BlockColor.WATER_BLOCK_COLOR;
             var r1 = color.getRed();
             var g1 = color.getGreen();
             var b1 = color.getBlue();
-            b1 = WATER_BLOCK_COLOR.getBlue();
+            b1 = BlockColor.WATER_BLOCK_COLOR.getBlue();
             var radio = depth / 96.0;
-            r1 += (WATER_BLOCK_COLOR.getRed() - r1) * radio;
-            g1 += (WATER_BLOCK_COLOR.getGreen() - g1) * radio;
+            r1 += (BlockColor.WATER_BLOCK_COLOR.getRed() - r1) * radio;
+            g1 += (BlockColor.WATER_BLOCK_COLOR.getGreen() - g1) * radio;
             color = new BlockColor(r1, g1, b1);
         }
 
