@@ -3338,6 +3338,7 @@ public class Level implements ChunkManager, Metadatable {
                 new Int2ObjectOpenHashMap<>()).put(player.getLoaderId(), player);
     }
 
+    @Deprecated
     private void sendChunk(int x, int z, long index, DataPacket packet) {
         for (int protocolId : chunkSendTasks.keySet()) {
             this.sendChunkInternal(x, z, index, packet, protocolId);
@@ -3394,7 +3395,8 @@ public class Level implements ChunkManager, Metadatable {
                 if (chunk != null) {
                     BatchPacket packet = chunk.getChunkPacket(protocol);
                     if (packet != null) {
-                        this.sendChunk(x, z, index, packet);
+                        //this.sendChunk(x, z, index, packet);
+                        this.sendChunkInternal(x, z, index, packet, protocol);
                         protocols.remove(protocol);
                     }
                 }
@@ -3430,7 +3432,8 @@ public class Level implements ChunkManager, Metadatable {
             if (chunk != null && chunk.getChanges() <= timestamp) {
                 chunk.setChunkPacket(protocol, data);
             }
-            this.sendChunk(x, z, index, data);
+            //this.sendChunk(x, z, index, data);
+            this.sendChunkInternal(x, z, index, data, protocol);
             if (this.timings.syncChunkSendTimer != null) this.timings.syncChunkSendTimer.stopTiming();
             return;
         }
