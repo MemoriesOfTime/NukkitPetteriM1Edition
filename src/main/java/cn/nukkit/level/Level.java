@@ -3026,9 +3026,9 @@ public class Level implements ChunkManager, Metadatable {
             return color;
         }
         if (nzy.getFloorY() > block.getFloorY()) {
-            color = darker(color, 0.85 - Math.min(5, nzy.getFloorY() - block.getFloorY()) * 0.05);
+            color = darker(color, 0.875 - Math.min(5, nzy.getFloorY() - block.getFloorY()) * 0.05);
         } else if (nzy.getFloorY() < block.getFloorY()) {
-            color = brighter(color, 0.85 - Math.min(5, block.getFloorY() - nzy.getFloorY()) * 0.05);
+            color = brighter(color, 0.875 - Math.min(5, block.getFloorY() - nzy.getFloorY()) * 0.05);
         }
 
         double deltaY = block.y - 128;
@@ -3042,20 +3042,21 @@ public class Level implements ChunkManager, Metadatable {
             int r1 = color.getRed();
             int g1 = color.getGreen();
             int b1 = color.getBlue();
+            BlockColor waterBlockColor = this.getWaterColorAt(x, z);
             //在水下
             if (block.y < 62) {
                 //海平面为62格。离海平面越远颜色越接近海洋颜色
                 double depth = 62 - block.y;
-                if (depth > 96) return BlockColor.WATER_BLOCK_COLOR;
-                b1 = BlockColor.WATER_BLOCK_COLOR.getBlue();
-                double radio = depth / 96.0;
-                r1 += (BlockColor.WATER_BLOCK_COLOR.getRed() - r1) * radio;
-                g1 += (BlockColor.WATER_BLOCK_COLOR.getGreen() - g1) * radio;
+                if (depth > 32) return waterBlockColor;
+                b1 = waterBlockColor.getBlue();
+                double radio = Math.max(0.5, depth / 96.0);
+                r1 += (waterBlockColor.getRed() - r1) * radio;
+                g1 += (waterBlockColor.getGreen() - g1) * radio;
             } else {
                 //湖泊 or 河流
-                b1 = BlockColor.WATER_BLOCK_COLOR.getBlue();
-                r1 += (BlockColor.WATER_BLOCK_COLOR.getRed() - r1) * 0.3;
-                g1 += (BlockColor.WATER_BLOCK_COLOR.getGreen() - g1) * 0.3;
+                b1 = waterBlockColor.getBlue();
+                r1 += (waterBlockColor.getRed() - r1) * 0.5;
+                g1 += (waterBlockColor.getGreen() - g1) * 0.5;
             }
             color = new BlockColor(r1, g1, b1);
         }
