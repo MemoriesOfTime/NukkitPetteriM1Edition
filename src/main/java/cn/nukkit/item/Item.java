@@ -910,7 +910,10 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
             }
         }
 
-        return get(Utils.toInt(data.get("id")), Utils.toInt(data.getOrDefault("damage", 0)), Utils.toInt(data.getOrDefault("count", 1)), nbtBytes);
+        return get(Utils.toInt(data.get("id")),
+                Utils.toInt(data.getOrDefault("damage", 0)),
+                Utils.toInt(data.getOrDefault("count", 1)),
+                nbtBytes);
     }
 
     public static Item fromJsonOld(Map<String, Object> data) {

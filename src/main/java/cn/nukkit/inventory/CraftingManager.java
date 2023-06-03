@@ -12,7 +12,6 @@ import cn.nukkit.utils.*;
 import io.netty.util.collection.CharObjectHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.zip.Deflater;
 
@@ -94,6 +93,29 @@ public class CraftingManager {
         List<Map> recipes_388 = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes388.json")).getRootSection().getMapList("recipes");
         List<Map> recipes_332 = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes332.json")).getMapList("recipes");
         List<Map> recipes_313 = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes313.json")).getMapList("recipes");
+
+        //TODO
+        ConfigSection recipes_smithing_config = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes_smithing_test.json")).getRootSection();
+        for (Map<String, Object> recipe : (List<Map<String, Object>>)recipes_smithing_config.get((Object)"smithing")) {
+            List<Map> outputs = ((List<Map>) recipe.get("output"));
+            if (outputs.size() > 1) {
+                continue;
+            }
+
+            String recipeId = (String) recipe.get("id");
+            int priority = Math.max(Utils.toInt(recipe.get("priority")) - 1, 0);
+
+            Map<String, Object> first = outputs.get(0);
+            Item item = Item.fromJson(first);
+
+            List<Item> sorted = new ArrayList<>();
+            for (Map<String, Object> ingredient : ((List<Map>) recipe.get("input"))) {
+                sorted.add(Item.fromJson(ingredient));
+            }
+
+            new SmithingRecipe(recipeId, priority, sorted, item).registerToCraftingManager(this);
+        }
+
 
         for (Map<String, Object> recipe : (List<Map<String, Object>>)recipes_419_config.get((Object)"shaped")) {
             if (!"crafting_table".equals(recipe.get("block"))) {
@@ -868,28 +890,7 @@ public class CraftingManager {
     }
 
     public SmithingRecipe matchSmithingRecipe(Item equipment, Item ingredient) {
-        List<Item> inputList = new ArrayList<>(2);
-        inputList.add(equipment.decrement(equipment.count - 1));
-        inputList.add(ingredient.decrement(ingredient.count - 1));
-        return matchSmithingRecipe(inputList);
-    }
-
-    @Nullable
-    public SmithingRecipe matchSmithingRecipe(List<Item> inputList) {
-        //TODO
-        inputList.sort(recipeComparator);
-        UUID inputHash = getMultiItemHash(inputList);
-        getSmithingRecipeMap().get(inputHash);
-        /*return getSmithingRecipeMap().values().stream()
-                .filter(entry -> entry.getKey().equals(inputHash))
-                .map(Map.Entry::getValue)
-                .findFirst().orElseGet(() ->
-                        getSmithingRecipeMap().values().stream().flatMap(map -> map.values().stream())
-                                .filter(recipe -> recipe.matchItems(inputList))
-                                .findFirst().orElse(null)
-                );*/
-
-        return null;
+        return this.getSmithingRecipeMap().get(getContainerHash(ingredient.getId(), equipment.getId()));
     }
 
     public static class Entry {

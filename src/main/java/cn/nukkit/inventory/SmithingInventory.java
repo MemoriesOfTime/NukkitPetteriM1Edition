@@ -33,7 +33,7 @@ public class SmithingInventory extends FakeBlockUIComponent {
     private static final int EQUIPMENT = 0;
     private static final int INGREDIENT = 1;
 
-    public static final int SMITHING_EQUIPMENT_UI_SLOT = 151; //51
+    public static final int SMITHING_EQUIPMENT_UI_SLOT = 51;
 
     public static final int SMITHING_INGREDIENT_UI_SLOT = 52;
 
@@ -111,7 +111,6 @@ public class SmithingInventory extends FakeBlockUIComponent {
 
         this.clear(EQUIPMENT);
         this.clear(INGREDIENT);
-        //playerUI.clear(50);
     }
 
     public Item getCurrentResult() {

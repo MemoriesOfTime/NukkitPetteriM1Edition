@@ -133,6 +133,8 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
 
     public static final int CRAFTING_SMITHING = 1003;
 
+    public static final int TRADE_WINDOW_ID = 500;
+
     public static final float DEFAULT_SPEED = 0.1f;
     public static final float MAXIMUM_SPEED = 0.5f;
     public static final float DEFAULT_FLY_SPEED = 0.05f;
@@ -3799,8 +3801,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                     // so we are emulating what Mojang should be sending
                     if (transactionPacket.transactionType == InventoryTransactionPacket.TYPE_MISMATCH
                             && !isCreative()
-                            && (inv = getWindowById(SMITHING_WINDOW_ID)) instanceof SmithingInventory) {
-                        SmithingInventory smithingInventory = (SmithingInventory) inv;
+                            && (inv = getWindowById(SMITHING_WINDOW_ID)) instanceof SmithingInventory smithingInventory) {
                         if (!smithingInventory.getResult().isNull()) {
                             InventoryTransactionPacket fixedPacket = new InventoryTransactionPacket();
                             fixedPacket.isRepairItemPart = true;
@@ -6687,19 +6688,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
     @Override
     public String toString() {
         return "Player(name='" + getName() + "', location=" + super.toString() + ')';
-    }
-
-    /**
-     * 将物品添加到玩家的主要库存中，并将任何多余的物品丢在地上。
-     * <p>
-     * Adds the items to the main player inventory and drops on the floor any excess.
-     *
-     * @param items The items to give to the player.
-     */
-    public void giveItem(Item... items) {
-        for (Item failed : getInventory().addItem(items)) {
-            getLevel().dropItem(this, failed);
-        }
     }
 
     @Override
