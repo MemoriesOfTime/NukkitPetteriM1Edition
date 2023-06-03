@@ -79,8 +79,13 @@ public class AdventureSettings implements Cloneable {
             layer.setLayerType(AbilityLayer.Type.BASE);
             layer.getAbilitiesSet().addAll(PlayerAbility.VALUES);
 
+            // TODO Multiversion 移除低版本不支持的内容
+            if (player.protocol < ProtocolInfo.v1_19_70) {
+                layer.getAbilitiesSet().remove(PlayerAbility.PRIVILEGED_BUILDER);
+            }
+
             for (Type type : Type.values()) {
-                if (type.isAbility() && this.get(type)) {
+                if (type.isAbility() && this.get(type) && player.protocol >= type.protocol) {
                     layer.getAbilityValues().add(type.getAbility());
                 }
             }
@@ -101,6 +106,19 @@ public class AdventureSettings implements Cloneable {
             layer.setFlySpeed(Player.DEFAULT_FLY_SPEED);
             packet.getAbilityLayers().add(layer);
 
+            if (this.get(Type.NO_CLIP)) {
+                AbilityLayer layer2 = new AbilityLayer();
+                layer2.setLayerType(AbilityLayer.Type.SPECTATOR);
+
+                layer2.getAbilitiesSet().addAll(PlayerAbility.VALUES);
+                layer2.getAbilitiesSet().remove(PlayerAbility.FLY_SPEED); //不要设置速度，这会导致视角出错
+                layer2.getAbilitiesSet().remove(PlayerAbility.WALK_SPEED);
+
+                layer2.getAbilityValues().add(PlayerAbility.FLYING);
+                layer2.getAbilityValues().add(PlayerAbility.NO_CLIP);
+                packet.getAbilityLayers().add(layer2);
+            }
+
             UpdateAdventureSettingsPacket adventurePacket = new UpdateAdventureSettingsPacket();
             adventurePacket.setAutoJump(get(Type.AUTO_JUMP));
             adventurePacket.setImmutableWorld(get(Type.WORLD_IMMUTABLE));
@@ -113,6 +131,9 @@ public class AdventureSettings implements Cloneable {
         }else {
             AdventureSettingsPacket pk = new AdventureSettingsPacket();
             for (Type t : Type.values()) {
+                if (t.getId() <= 0) {
+                    continue;
+                }
                 pk.setFlag(t.getId(), get(t));
             }
 
@@ -149,19 +170,25 @@ public class AdventureSettings implements Cloneable {
         OPERATOR(AdventureSettingsPacket.OPERATOR, PlayerAbility.OPERATOR_COMMANDS, false),
         TELEPORT(AdventureSettingsPacket.TELEPORT, PlayerAbility.TELEPORT, false),
         BUILD(AdventureSettingsPacket.BUILD, PlayerAbility.BUILD, true),
-        PRIVILEGED_BUILDER(-1, PlayerAbility.PRIVILEGED_BUILDER, false),
+        PRIVILEGED_BUILDER(0, PlayerAbility.PRIVILEGED_BUILDER, false, ProtocolInfo.v1_19_70),
 
-        @Deprecated
+        @Deprecated //1.19.30弃用
         DEFAULT_LEVEL_PERMISSIONS(AdventureSettingsPacket.DEFAULT_LEVEL_PERMISSIONS, null, false);
 
         private final int id;
         private final PlayerAbility ability;
         private final boolean defaultValue;
+        private int protocol;
 
         Type(int id, PlayerAbility ability, boolean defaultValue) {
+            this(id, ability, defaultValue, -1);
+        }
+
+        Type(int id, PlayerAbility ability, boolean defaultValue, int protocol) {
             this.id = id;
             this.ability = ability;
             this.defaultValue = defaultValue;
+            this.protocol = protocol;
         }
 
         /**

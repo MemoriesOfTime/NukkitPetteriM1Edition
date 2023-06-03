@@ -3,6 +3,7 @@ package cn.nukkit.network;
 import cn.nukkit.Nukkit;
 import cn.nukkit.Player;
 import cn.nukkit.Server;
+import cn.nukkit.network.process.DataPacketManager;
 import cn.nukkit.network.protocol.*;
 import cn.nukkit.utils.BinaryStream;
 import cn.nukkit.utils.Utils;
@@ -49,8 +50,8 @@ public class Network {
 
     private final Set<AdvancedSourceInterface> advancedInterfaces = new HashSet<>();
 
-    private double upload = 0;
-    private double download = 0;
+    /*private double upload = 0;
+    private double download = 0;*/
 
     private String name;
     private String subName;
@@ -60,6 +61,7 @@ public class Network {
 
     public Network(Server server) {
         this.registerPackets();
+        DataPacketManager.registerDefaultProcessors();
         this.server = server;
         List<NetworkIF> tmpIfs = null;
         try {
@@ -73,8 +75,8 @@ public class Network {
 
     @Deprecated
     public void addStatistics(double upload, double download) {
-        this.upload += upload;
-        this.download += download;
+        /*this.upload += upload;
+        this.download += download;*/
     }
 
     public double getUpload() {
@@ -231,7 +233,7 @@ public class Network {
                     pk.protocol = protocol;
                     pk.setBuffer(buf, buf.length - bais.available());
                     try {
-                        if (protocol > 8) {
+                        if (raknetProtocol > 8) {
                             pk.decode();
                         }else { // version < 1.6
                             pk.setBuffer(buf, 3);
@@ -319,6 +321,8 @@ public class Network {
     private void registerPackets() {
         this.packetPool = new Class[256];
 
+        this.registerPacket(ProtocolInfo.SERVER_TO_CLIENT_HANDSHAKE_PACKET, ServerToClientHandshakePacket.class);
+        this.registerPacket(ProtocolInfo.CLIENT_TO_SERVER_HANDSHAKE_PACKET, ClientToServerHandshakePacket.class);
         this.registerPacket(ProtocolInfo.ADD_ENTITY_PACKET, AddEntityPacket.class);
         this.registerPacket(ProtocolInfo.ADD_ITEM_ENTITY_PACKET, AddItemEntityPacket.class);
         this.registerPacket(ProtocolInfo.ADD_PAINTING_PACKET, AddPaintingPacket.class);

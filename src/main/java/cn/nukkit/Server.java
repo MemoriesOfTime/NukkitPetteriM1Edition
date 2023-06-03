@@ -476,6 +476,14 @@ public class Server {
      * Server authority block destruction
      */
     public boolean serverAuthoritativeBlockBreaking;
+    /**
+     * Network encryption
+     */
+    public boolean encryptionEnabled;
+    /**
+     * Using WaterdogPE Proxy
+     */
+    public boolean useWaterdog;
 
     Server(final String filePath, String dataPath, String pluginPath, boolean loadPlugins, boolean debug) {
         Preconditions.checkState(instance == null, "Already initialized!");
@@ -587,7 +595,7 @@ public class Server {
             }
         }
 
-        log.info("\u00A7b-- \u00A7cNukkit \u00A7aPetteriM1 Edition \u00A7b--");
+        log.info("\u00A7b-- \u00A7cNukkit \u00A7dMOT \u00A7b--");
 
         this.consoleSender = new ConsoleCommandSender();
         this.commandMap = new SimpleCommandMap(this);
@@ -749,10 +757,10 @@ public class Server {
 
                 boolean isMaster = Nukkit.getBranch().equals("master");
                 if (!this.getNukkitVersion().equals(latest) && !this.getNukkitVersion().equals("git-null") && isMaster) {
-                    this.getLogger().info("\u00A7c[Nukkit-PM1E-MOT][Update] \u00A7eThere is a new build of §cNukkit§3-§aPM1E§3-§dMOT §eavailable! Current: " + this.getNukkitVersion() + " Latest: " + latest);
-                    this.getLogger().info("\u00A7c[Nukkit-PM1E-MOT][Update] \u00A7eYou can download the latest build from https://github.com/MemoriesOfTime/NukkitPetteriM1Edition/");
+                    this.getLogger().info("\u00A7c[Nukkit-MOT][Update] \u00A7eThere is a new build of §cNukkit§3-§dMOT §eavailable! Current: " + this.getNukkitVersion() + " Latest: " + latest);
+                    this.getLogger().info("\u00A7c[Nukkit-MOT][Update] \u00A7eYou can download the latest build from https://github.com/MemoriesOfTime/NukkitPetteriM1Edition/");
                 } else if (!isMaster) {
-                    this.getLogger().warning("\u00A7c[Nukkit-PM1E-MOT] \u00A7eYou are running a dev build! Do not use in production! Branch: " + Nukkit.getBranch());
+                    this.getLogger().warning("\u00A7c[Nukkit-MOT] \u00A7eYou are running a dev build! Do not use in production! Branch: " + Nukkit.getBranch());
                 }
             } catch (Exception ignore) {
             }
@@ -1198,7 +1206,9 @@ public class Server {
     }
 
     public void sendRecipeList(Player player) {
-        if (player.protocol >= ProtocolInfo.v1_19_70_24) {
+        if (player.protocol >= ProtocolInfo.v1_19_80) {
+            player.dataPacket(CraftingManager.packet582);
+        } else if (player.protocol >= ProtocolInfo.v1_19_70_24) {
             player.dataPacket(CraftingManager.packet575);
         } else if (player.protocol >= ProtocolInfo.v1_19_60) {
             player.dataPacket(CraftingManager.packet567);
@@ -1419,7 +1429,7 @@ public class Server {
         Runtime runtime = Runtime.getRuntime();
         double used = NukkitMath.round((double) (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024, 2);
         double max = NukkitMath.round(((double) runtime.maxMemory()) / 1024 / 1024, 2);
-        System.out.print((char) 0x1b + "]0;" + /*Nukkit.NUKKIT*/ "Nukkit PM1E MOT" +
+        System.out.print((char) 0x1b + "]0;" + Nukkit.NUKKIT +
                 " | Online " + this.players.size() + '/' + this.maxPlayers +
                 " | Memory " + Math.round(used / max * 100) + '%' +
                 /*" | U " + NukkitMath.round((this.network.getUpload() / 1024 * 1000), 2) +
@@ -1445,7 +1455,7 @@ public class Server {
     }
 
     public String getCodename() {
-        return "PM1E";
+        return "MOT";
     }
 
     public String getVersion() {
@@ -2050,7 +2060,7 @@ public class Server {
      * @param player player
      */
     public void removePlayer(Player player) {
-        if (this.players.remove(player.getSocketAddress()) != null) {
+        if (this.players.remove(player.getRawSocketAddress()) != null) {
             return;
         }
 
@@ -2818,7 +2828,6 @@ public class Server {
         Entity.registerEntity("Bee", EntityBee.class);
         Entity.registerEntity("Strider", EntityStrider.class);
         Entity.registerEntity("Tadpole", EntityTadpole.class);
-        Entity.registerEntity("Goat", EntityGoat.class);
         Entity.registerEntity("Axolotl", EntityAxolotl.class);
         Entity.registerEntity("GlowSquid", EntityGlowSquid.class);
         Entity.registerEntity("Allay", EntityAllay.class);
@@ -2875,6 +2884,10 @@ public class Server {
      */
     public boolean isNetherAllowed() {
         return this.netherEnabled;
+    }
+
+    public boolean isWaterdogCapable() {
+        return this.useWaterdog;
     }
 
     /**
@@ -3007,6 +3020,8 @@ public class Server {
                 break;
         }
         this.serverAuthoritativeBlockBreaking = this.getPropertyBoolean("server-authoritative-block-breaking", true);
+        this.encryptionEnabled = this.getPropertyBoolean("encryption", true);
+        this.useWaterdog = this.getPropertyBoolean("use-waterdog", false);
         this.c_s_spawnThreshold = (int) Math.ceil(Math.sqrt(this.spawnThreshold));
         try {
             this.gamemode = this.getPropertyInt("gamemode", 0) & 0b11;
@@ -3152,6 +3167,8 @@ public class Server {
             put("deprecated-verbose", true);
             put("server-authoritative-movement", "server-auth");
             put("server-authoritative-block-breaking", true);
+            put("encryption", true);
+            put("use-waterdog", false);
         }
     }
 

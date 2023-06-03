@@ -441,6 +441,8 @@ public abstract class Entity extends Location implements Metadatable {
 
     public boolean closed = false;
 
+    public boolean noClip = false;
+
     protected Timing timing;
 
     public final boolean isPlayer;
@@ -1420,11 +1422,11 @@ public abstract class Entity extends Location implements Metadatable {
     }
 
     public boolean canCollideWith(Entity entity) {
-        return !this.justCreated && this != entity;
+        return !this.justCreated && this != entity && !this.noClip;
     }
 
     protected boolean checkObstruction(double x, double y, double z) {
-        if (this.level.getCollisionCubes(this, this.boundingBox, false).length == 0) {
+        if (this.noClip || this.level.getCollisionCubes(this, this.boundingBox, false).length == 0) {
             return false;
         }
 
@@ -1931,37 +1933,41 @@ public abstract class Entity extends Location implements Metadatable {
     }
 
     public void fall(float fallDistance) {
-        if (fallDistance > 0.75) {
-            if (!this.hasEffect(Effect.SLOW_FALLING)) {
-                Block down = this.level.getBlock(this.floor().down());
-                if (!this.noFallDamage) {
-                    float damage = (float) Math.floor(fallDistance - 3 - (this.hasEffect(Effect.JUMP) ? this.getEffect(Effect.JUMP).getAmplifier() + 1 : 0));
-                    if (down.getId() == BlockID.HAY_BALE) {
-                        damage -= (damage * 0.8f);
-                    }
+        if (fallDistance > 0.75 && !this.hasEffect(Effect.SLOW_FALLING)) {
+            Block down = this.level.getBlock(this.floor().down());
+            if (!this.noFallDamage) {
+                float damage = (float) Math.floor(fallDistance - 3 - (this.hasEffect(Effect.JUMP) ? this.getEffect(Effect.JUMP).getAmplifier() + 1 : 0));
 
-                    if (damage > 0) {
-                        if (!this.isPlayer || level.getGameRules().getBoolean(GameRule.FALL_DAMAGE)) {
-                            this.attack(new EntityDamageEvent(this, DamageCause.FALL, damage));
-                        }
+                if (down.getId() == BlockID.HAY_BALE) {
+                    damage -= damage * 0.8f;
+                }
+
+                if (isPlayer) {
+                    final int level = ((Player) this).getInventory().getBootsFast().getEnchantmentLevel(Enchantment.ID_PROTECTION_FALL);
+                    if (level != 0) {
+                        damage -= damage / 100 * (level * 12);
                     }
                 }
 
-                if (down.getId() == BlockID.FARMLAND) {
-                    Event ev;
-
-                    if (this.isPlayer) {
-                        ev = new PlayerInteractEvent((Player) this, null, down, null, Action.PHYSICAL);
-                    } else {
-                        ev = new EntityInteractEvent(this, down);
-                    }
-
-                    this.server.getPluginManager().callEvent(ev);
-                    if (ev.isCancelled()) {
-                        return;
-                    }
-                    this.level.setBlock(down, Block.get(BlockID.DIRT), true, true);
+                if (damage > 0 && (!this.isPlayer || level.getGameRules().getBoolean(GameRule.FALL_DAMAGE))) {
+                    this.attack(new EntityDamageEvent(this, DamageCause.FALL, damage));
                 }
+            }
+
+            if (down.getId() == BlockID.FARMLAND) {
+                Event ev;
+
+                if (this.isPlayer) {
+                    ev = new PlayerInteractEvent((Player) this, null, down, null, Action.PHYSICAL);
+                } else {
+                    ev = new EntityInteractEvent(this, down);
+                }
+
+                this.server.getPluginManager().callEvent(ev);
+                if (ev.isCancelled()) {
+                    return;
+                }
+                this.level.setBlock(down, Block.get(BlockID.DIRT), true, true);
             }
         }
     }
@@ -2111,7 +2117,7 @@ public abstract class Entity extends Location implements Metadatable {
 
         return false;*/
         int bid = level.getBlockIdAt(chunk, this.getFloorX(), this.getFloorY(), this.getFloorZ());
-        return bid == BlockID.WATER || bid == BlockID.STILL_WATER;
+        return Block.hasWater(bid);
     }
 
     public boolean isInsideOfSolid() {
@@ -2161,7 +2167,7 @@ public abstract class Entity extends Location implements Metadatable {
 
         this.checkChunks();
 
-        if (!this.onGround || dy != 0) {
+        if ((!this.onGround || dy != 0) && !this.noClip) {
             AxisAlignedBB bb = this.boundingBox.growNoUp(0.1, 0.1, 0.1);
             bb.setMinY(bb.getMinY() - 0.75);
 
@@ -2198,7 +2204,7 @@ public abstract class Entity extends Location implements Metadatable {
 
             AxisAlignedBB axisalignedbb = this.boundingBox.clone();
 
-            AxisAlignedBB[] list = this.level.getCollisionCubes(this, this.boundingBox.addCoord(dx, dy, dz), false);
+            AxisAlignedBB[] list = this.noClip ? AxisAlignedBB.EMPTY_ARRAY : this.level.getCollisionCubes(this, this.boundingBox.addCoord(dx, dy, dz), false);
 
             for (AxisAlignedBB bb : list) {
                 dy = bb.calculateYOffset(this.boundingBox, dy);
@@ -2296,10 +2302,17 @@ public abstract class Entity extends Location implements Metadatable {
     }
 
     protected void checkGroundState(double movX, double movY, double movZ, double dx, double dy, double dz) {
-        this.isCollidedVertically = movY != dy;
-        this.isCollidedHorizontally = (movX != dx || movZ != dz);
-        this.isCollided = (this.isCollidedHorizontally || this.isCollidedVertically);
-        this.onGround = (movY != dy && movY < 0);
+        if (this.noClip) {
+            this.isCollidedVertically = false;
+            this.isCollidedHorizontally = false;
+            this.isCollided = false;
+            this.onGround = false;
+        } else {
+            this.isCollidedVertically = movY != dy;
+            this.isCollidedHorizontally = (movX != dx || movZ != dz);
+            this.isCollided = (this.isCollidedHorizontally || this.isCollidedVertically);
+            this.onGround = (movY != dy && movY < 0);
+        }
     }
 
     public List<Block> getBlocksAround() {
@@ -2351,6 +2364,10 @@ public abstract class Entity extends Location implements Metadatable {
     }
 
     protected void checkBlockCollision() {
+        if (this.noClip) {
+            return;
+        }
+
         Vector3 vector = new Vector3(0, 0, 0);
         boolean portal = false;
 
@@ -2577,7 +2594,7 @@ public abstract class Entity extends Location implements Metadatable {
 
         if (this.setPositionAndRotation(to, yaw, pitch)) {
             this.resetFallDistance();
-            this.onGround = true;
+            this.onGround = !this.isNoClip();
 
             this.updateMovement();
 
@@ -2911,5 +2928,14 @@ public abstract class Entity extends Location implements Metadatable {
             }
         }
         return true;
+    }
+
+    public boolean isNoClip() {
+        return noClip;
+    }
+
+    public void setNoClip(boolean noClip) {
+        this.noClip = noClip;
+        this.setDataFlag(DATA_FLAGS, DATA_FLAG_HAS_COLLISION, noClip);
     }
 }

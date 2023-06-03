@@ -2,10 +2,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Nukkit PetteriM1 Edition</name>
+    <name>Nukkit-MOT</name>
     <groupId>cn.nukkit</groupId>
     <artifactId>Nukkit</artifactId>
-    <version>PM1E-MOT-SNAPSHOT</version>
+    <version>MOT-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -61,8 +61,19 @@
         </dependency>
         <dependency>
             <groupId>com.nukkitx</groupId>
-            <artifactId>fastutil-lite</artifactId>
-            <version>8.1.1</version>
+            <artifactId>natives</artifactId>
+            <version>1.0.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil-core</artifactId>
+            <version>8.5.4</version>
+        </dependency>
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil-extra</artifactId>
+            <version>8.5.4</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -191,6 +202,11 @@
             <artifactId>oshi-core</artifactId>
             <version>5.8.7</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.intellij</groupId>
+            <artifactId>annotations</artifactId>
+            <version>12.0</version>
         </dependency>
     </dependencies>
 
