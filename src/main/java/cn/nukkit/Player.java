@@ -95,8 +95,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.math3.util.FastMath;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -106,9 +104,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteOrder;
-import java.util.List;
 import java.util.*;
-import java.util.Queue;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -193,7 +189,8 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
     protected Vector3 teleportPosition = null;
 
     protected boolean connected = true;
-    protected final InetSocketAddress socketAddress;
+    protected final InetSocketAddress rawSocketAddress;
+    protected InetSocketAddress socketAddress;
     protected boolean removeFormat = true;
 
     protected String username;
@@ -306,6 +303,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
     private int timeSinceRest;
     private boolean inSoulSand;
     private boolean dimensionChangeInProgress;
+    private boolean needDimensionChangeACK;
 
     /**
      * Packets that can be received before the player has logged in
@@ -690,6 +688,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
         this.networkSession = interfaz.getSession(socketAddress);
         this.perm = new PermissibleBase(this);
         this.server = Server.getInstance();
+        this.rawSocketAddress = socketAddress;
         this.socketAddress = socketAddress;
         this.loaderId = Level.generateChunkLoaderId(this);
         this.gamemode = this.server.getGamemode();
@@ -708,6 +707,11 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
 
     public boolean isPlayer() {
         return true;
+    }
+
+    @Override
+    public Player asPlayer() {
+        return this;
     }
 
     public void removeAchievement(String achievementId) {
@@ -739,6 +743,18 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
         if (this.spawned) {
             this.server.updatePlayerListData(this.getUniqueId(), this.getId(), this.displayName, skin, this.loginChainData.getXUID());
         }
+    }
+
+    public String getRawAddress() {
+        return this.rawSocketAddress.getAddress().getHostAddress();
+    }
+
+    public int getRawPort() {
+        return this.rawSocketAddress.getPort();
+    }
+
+    public InetSocketAddress getRawSocketAddress() {
+        return this.rawSocketAddress;
     }
 
     public String getAddress() {
@@ -864,6 +880,15 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                     continue;
                 ((BlockEntitySpawnable) blockEntity).spawnTo(this);
             }
+        }
+
+        if (this.needDimensionChangeACK) {
+            this.needDimensionChangeACK = false;
+
+            PlayerActionPacket playerActionPacket = new PlayerActionPacket();
+            playerActionPacket.action = PlayerActionPacket.ACTION_DIMENSION_CHANGE_SUCCESS;
+            playerActionPacket.entityId = this.getId();
+            this.dataPacket(playerActionPacket);
         }
     }
 
@@ -1042,7 +1067,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
 
                     if (Nukkit.getBranch().equals("master")) {
                         if (!server.getNukkitVersion().equals(latest) && !server.getNukkitVersion().equals("git-null")) {
-                            this.sendMessage("§c[Nukkit-PM1E-MOT][Update] §eThere is a new build of §cNukkit§3-§aPM1E§3-§dMOT §eavailable! Current: " + server.getNukkitVersion() + " Latest: " + latest);
+                            this.sendMessage("§c[Nukkit-MOT][Update] §eThere is a new build of §cNukkit§3-§dMOT §eavailable! Current: " + server.getNukkitVersion() + " Latest: " + latest);
                         }
                     }
                 } catch (Exception ignore) {
@@ -1346,9 +1371,13 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
      * Returns a client-friendly gamemode of the specified real gamemode
      * This function takes care of handling gamemodes known to MCPE (as of 1.1.0.3, that includes Survival, Creative and Adventure)
      */
-    private static int getClientFriendlyGamemode(int gamemode) {
+    private int getClientFriendlyGamemode(int gamemode) {
         gamemode &= 0x03;
         if (gamemode == Player.SPECTATOR) {
+            //1.19.30+使用真正的旁观模式
+            if (this.protocol >= ProtocolInfo.v1_19_30) {
+                return GameType.SPECTATOR.ordinal();
+            }
             return Player.CREATIVE;
         }
         return gamemode;
@@ -2655,6 +2684,10 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                         break;
                     }
 
+                    if (this.server.isWaterdogCapable() && loginChainData.getWaterdogIP() != null) {
+                        this.socketAddress = new InetSocketAddress(this.loginChainData.getWaterdogIP(), this.getRawPort());
+                    }
+
                     this.version = loginChainData.getGameVersion();
 
                     getServer().getLogger().debug("Name: " + this.username + " Protocol: " + this.protocol + " Version: " + this.version);
@@ -3250,7 +3283,7 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                                 this.setSneaking(false);
                             }
                             break packetswitch;
-                        case PlayerActionPacket.ACTION_DIMENSION_CHANGE_ACK:
+                        case PlayerActionPacket.ACTION_DIMENSION_CHANGE_SUCCESS:
                             this.sendPosition(this, this.yaw, this.pitch, MovePlayerPacket.MODE_RESET);
                             this.dummyBossBars.values().forEach(DummyBossBar::reshow);
                             break;
@@ -3695,26 +3728,25 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                     break;
                 case ProtocolInfo.MAP_INFO_REQUEST_PACKET:
                     MapInfoRequestPacket pk = (MapInfoRequestPacket) packet;
-                    Item mapItem = null;
+                    ItemMap mapItem = null;
 
                     for (Item item1 : this.offhandInventory.getContents().values()) {
-                        if (item1 instanceof ItemMap && ((ItemMap) item1).getMapId() == pk.mapId) {
-                            mapItem = item1;
+                        if (item1 instanceof ItemMap map && map.getMapId() == pk.mapId) {
+                            mapItem = map;
                         }
                     }
 
                     if (mapItem == null) {
                         for (Item item1 : this.inventory.getContents().values()) {
-                            if (item1 instanceof ItemMap && ((ItemMap) item1).getMapId() == pk.mapId) {
-                                mapItem = item1;
+                            if (item1 instanceof ItemMap map && map.getMapId() == pk.mapId) {
+                                mapItem = map;
                             }
                         }
                     }
 
                     if (mapItem == null) {
                         for (BlockEntity be : this.level.getBlockEntities().values()) {
-                            if (be instanceof BlockEntityItemFrame) {
-                                BlockEntityItemFrame itemFrame1 = (BlockEntityItemFrame) be;
+                            if (be instanceof BlockEntityItemFrame itemFrame1) {
 
                                 if (itemFrame1.getItem() instanceof ItemMap && ((ItemMap) itemFrame1.getItem()).getMapId() == pk.mapId) {
                                     ((ItemMap) itemFrame1.getItem()).sendImage(this);
@@ -3727,31 +3759,20 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                         getServer().getPluginManager().callEvent(event = new PlayerMapInfoRequestEvent(this, mapItem));
 
                         if (!event.isCancelled()) {
-                            ItemMap map = (ItemMap) mapItem;
-                            if (map.trySendImage(this)) {
+                            if (mapItem.trySendImage(this)) {
                                 return;
                             }
-                            try {
-                                BufferedImage image = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
-                                Graphics2D graphics = image.createGraphics();
 
-                                int worldX = (this.getFloorX() / 128) << 7;
-                                int worldZ = (this.getFloorZ() / 128) << 7;
-                                for (int x = 0; x < 128; x++) {
-                                    for (int y = 0; y < 128; y++) {
-                                        graphics.setColor(new Color(this.getLevel().getMapColorAt(worldX + x, worldZ + y).getRGB()));
-                                        graphics.fillRect(x, y, x + 1, y + 1);
-                                    }
+                            ItemMap finalMapItem = mapItem;
+                            this.server.getScheduler().scheduleAsyncTask(new AsyncTask() {
+                                @Override
+                                public void onRun() {
+                                    finalMapItem.renderMap(Player.this.getLevel(), (Player.this.getFloorX() / 128) << 7, (Player.this.getFloorZ() / 128) << 7, 1);
+                                    finalMapItem.sendImage(Player.this);
                                 }
-
-                                map.setImage(image);
-                                map.sendImage(this);
-                            } catch (Exception ex) {
-                                this.getServer().getLogger().debug("There was an error while generating map image", ex);
-                            }
+                            });
                         }
                     }
-
                     break;
                 case ProtocolInfo.LEVEL_SOUND_EVENT_PACKET:
                 case ProtocolInfo.LEVEL_SOUND_EVENT_PACKET_V1:
@@ -4780,13 +4801,28 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
      * @param itemCategory the item category
      */
     public void setItemCoolDown(int coolDown, String itemCategory) {
+        if (this.protocol < ProtocolInfo.v1_18_10) {
+            return;
+        }
         PlayerStartItemCoolDownPacket pk = new PlayerStartItemCoolDownPacket();
         pk.setCoolDownDuration(coolDown);
         pk.setItemCategory(itemCategory);
         this.dataPacket(pk);
     }
 
+    /**
+     * 发送一个弹出式消息框给玩家
+     * <p>
+     * Send a Toast message box to the player
+     *
+     * @param title   the title
+     * @param content the content
+     */
     public void sendToast(String title, String content) {
+        if (this.protocol < ProtocolInfo.v1_19_0) {
+            this.sendTitle(title, content);
+            return;
+        }
         ToastRequestPacket pk = new ToastRequestPacket();
         pk.title = title;
         pk.content = content;
@@ -6103,6 +6139,10 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
             pk0.radius = this.chunkRadius << 4;
             this.dataPacket(pk0);
         }
+
+        if (this.protocol >= ProtocolInfo.v1_19_50) {
+            this.needDimensionChangeACK = true;
+        }
     }
 
     @Override
@@ -6551,6 +6591,19 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
             }
         }
         return false;
+    }
+
+    /**
+     * 将物品添加到玩家的主要库存中，并将任何多余的物品丢在地上。
+     * <p>
+     * Add items to the player's main inventory and drop any excess items on the ground.
+     *
+     * @param items The items to give to the player.
+     */
+    public void giveItem(Item... items) {
+        for (Item failed : getInventory().addItem(items)) {
+            getLevel().dropItem(this, failed);
+        }
     }
 
     public boolean isMovementServerAuthoritative() {

@@ -18,6 +18,7 @@ import cn.nukkit.metadata.Metadatable;
 import cn.nukkit.plugin.Plugin;
 import cn.nukkit.potion.Effect;
 import cn.nukkit.utils.BlockColor;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
@@ -607,6 +608,10 @@ public abstract class Block extends Position implements Metadatable, Cloneable, 
 
     public int onUpdate(int type) {
         return 0;
+    }
+
+    public void onNeighborChange(@NotNull BlockFace side) {
+
     }
 
     public boolean onActivate(Item item) {
@@ -1258,6 +1263,11 @@ public abstract class Block extends Position implements Metadatable, Cloneable, 
 
     public static boolean equals(Block b1, Block b2, boolean checkDamage) {
         return b1 != null && b2 != null && b1.getId() == b2.getId() && (!checkDamage || b1.getDamage() == b2.getDamage());
+    }
+
+    @Override
+    public int hashCode() {
+        return  ((int) x ^ ((int) z << 12)) ^ ((int) (y + 64)/*这里不删除+64，为以后支持384世界高度准备*/ << 23);
     }
 
     public Item toItem() {
