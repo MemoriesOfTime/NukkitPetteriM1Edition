@@ -59,8 +59,7 @@ public class SmithingTransaction extends InventoryTransaction {
                     this.ingredientItem = action.getTargetItem();
                     break;
             }
-        } else if (action instanceof CreativeInventoryAction) {
-            CreativeInventoryAction creativeAction = (CreativeInventoryAction) action;
+        } else if (action instanceof CreativeInventoryAction creativeAction) {
             if (creativeAction.getActionType() == 0
                     && creativeAction.getSourceItem().isNull()
                     && !creativeAction.getTargetItem().isNull() && creativeAction.getTargetItem().getId() == ItemID.NETHERITE_INGOT) {
@@ -75,7 +74,7 @@ public class SmithingTransaction extends InventoryTransaction {
         if (inventory == null) {
             return false;
         }
-        SmithingInventory grindstoneInventory = (SmithingInventory) inventory;
+        SmithingInventory smithingInventory = (SmithingInventory) inventory;
         if (outputItem == null || outputItem.isNull() ||
                 ((equipmentItem == null || equipmentItem.isNull()) && (ingredientItem == null || ingredientItem.isNull()))) {
             return false;
@@ -85,9 +84,9 @@ public class SmithingTransaction extends InventoryTransaction {
         Item equipment = equipmentItem != null? equipmentItem : air;
         Item ingredient = ingredientItem != null? ingredientItem : air;
 
-        return equipment.equals(grindstoneInventory.getEquipment(), true, true)
-                && ingredient.equals(grindstoneInventory.getIngredient(), true, true)
-                && outputItem.equals(grindstoneInventory.getResult(), true, true);
+        return equipment.equals(smithingInventory.getEquipment(), true, true)
+                && ingredient.equals(smithingInventory.getIngredient(), true, true)
+                && outputItem.equals(smithingInventory.getResult(), true, true);
     }
 
     @Override
