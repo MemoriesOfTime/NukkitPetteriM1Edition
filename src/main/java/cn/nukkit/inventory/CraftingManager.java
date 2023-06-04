@@ -493,6 +493,14 @@ public class CraftingManager {
                 }
             }
         }
+
+        //TODO 整理并确定版本
+        if (protocol >= ProtocolInfo.v1_19_80) {
+            for (SmithingRecipe recipe : this.getSmithingRecipeMap().values()) {
+                pk.addShapelessRecipe(recipe);
+            }
+        }
+
         pk.tryEncode();
         return pk;
     }

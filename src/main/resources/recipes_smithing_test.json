@@ -1,16 +1,17 @@
-[
+{
   "smithing": [
     {
       "type": 8,
       "block": "smithing_table",
+      "id": "minecraft:netherite_sword",
       "input": [
         {
           "count": 1,
-          "id": "276",
+          "id": "276"
         },
         {
           "count": 1,
-          "id": "742",
+          "id": "742"
         }
       ],
       "output": [
@@ -22,4 +23,4 @@
       "priority": 0
     }
   ]
-]
+}
