@@ -95,7 +95,7 @@ public class CraftingManager {
         List<Map> recipes_313 = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes313.json")).getMapList("recipes");
 
         //TODO
-        ConfigSection recipes_smithing_config = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes_smithing_test.json")).getRootSection();
+        ConfigSection recipes_smithing_config = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes_smithing.json")).getRootSection();
         for (Map<String, Object> recipe : (List<Map<String, Object>>)recipes_smithing_config.get((Object)"smithing")) {
             List<Map> outputs = ((List<Map>) recipe.get("output"));
             if (outputs.size() > 1) {
@@ -113,7 +113,7 @@ public class CraftingManager {
                 sorted.add(Item.fromJson(ingredient));
             }
 
-            new SmithingRecipe(recipeId, priority, sorted, item).registerToCraftingManager(this);
+            this.registerRecipe(527, new SmithingRecipe(recipeId, priority, sorted, item));
         }
 
 
@@ -570,7 +570,7 @@ public class CraftingManager {
         if (protocol == 313) {
             return this.recipes313;
         }
-        throw new IllegalArgumentException("Invalid protocol: " + protocol + " Supported: 419, 388, 332, 313");
+        throw new IllegalArgumentException("Invalid protocol: " + protocol + " Supported: 527, 419, 388, 332, 313");
     }
 
     public Map<Integer, FurnaceRecipe> getFurnaceRecipes() {
