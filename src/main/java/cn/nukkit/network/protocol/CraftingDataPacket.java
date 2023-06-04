@@ -116,7 +116,9 @@ public class CraftingDataPacket extends DataPacket {
                     case SMITHING_TRANSFORM:
                         SmithingRecipe smithing = (SmithingRecipe) recipe;
                         this.putString(smithing.getRecipeId());
-                        this.putRecipeIngredient(protocol, Item.get(Item.AIR));
+                        if (protocol >= ProtocolInfo.v1_19_80) {
+                            this.putRecipeIngredient(protocol, Item.get(Item.AIR)); //template
+                        }
                         this.putRecipeIngredient(protocol, smithing.getEquipment());
                         this.putRecipeIngredient(protocol, smithing.getIngredient());
                         this.putSlot(protocol, smithing.getResult(), true);

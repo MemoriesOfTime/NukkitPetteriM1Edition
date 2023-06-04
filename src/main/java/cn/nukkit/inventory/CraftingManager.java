@@ -94,28 +94,7 @@ public class CraftingManager {
         List<Map> recipes_332 = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes332.json")).getMapList("recipes");
         List<Map> recipes_313 = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes313.json")).getMapList("recipes");
 
-        //TODO
         ConfigSection recipes_smithing_config = new Config(Config.YAML).loadFromStream(Server.class.getClassLoader().getResourceAsStream("recipes_smithing.json")).getRootSection();
-        for (Map<String, Object> recipe : (List<Map<String, Object>>)recipes_smithing_config.get((Object)"smithing")) {
-            List<Map> outputs = ((List<Map>) recipe.get("output"));
-            if (outputs.size() > 1) {
-                continue;
-            }
-
-            String recipeId = (String) recipe.get("id");
-            int priority = Math.max(Utils.toInt(recipe.get("priority")) - 1, 0);
-
-            Map<String, Object> first = outputs.get(0);
-            Item item = Item.fromJson(first);
-
-            List<Item> sorted = new ArrayList<>();
-            for (Map<String, Object> ingredient : ((List<Map>) recipe.get("input"))) {
-                sorted.add(Item.fromJson(ingredient));
-            }
-
-            this.registerRecipe(527, new SmithingRecipe(recipeId, priority, sorted, item));
-        }
-
 
         for (Map<String, Object> recipe : (List<Map<String, Object>>)recipes_419_config.get((Object)"shaped")) {
             if (!"crafting_table".equals(recipe.get("block"))) {
@@ -219,6 +198,27 @@ public class CraftingManager {
 
             this.registerRecipe(419, new ShapelessRecipe(recipeId, priority, item, sorted));
             this.registerRecipe(527, new ShapelessRecipe(recipeId, priority, item, sorted));
+        }
+
+        // Smithing recipes 锻造配方
+        for (Map<String, Object> recipe : (List<Map<String, Object>>)recipes_smithing_config.get((Object)"smithing")) {
+            List<Map> outputs = ((List<Map>) recipe.get("output"));
+            if (outputs.size() > 1) {
+                continue;
+            }
+
+            String recipeId = (String) recipe.get("id");
+            int priority = Math.max(Utils.toInt(recipe.get("priority")) - 1, 0);
+
+            Map<String, Object> first = outputs.get(0);
+            Item item = Item.fromJson(first);
+
+            List<Item> sorted = new ArrayList<>();
+            for (Map<String, Object> ingredient : ((List<Map>) recipe.get("input"))) {
+                sorted.add(Item.fromJson(ingredient));
+            }
+
+            this.registerRecipe(527, new SmithingRecipe(recipeId, priority, sorted, item));
         }
 
         for (Map<String, Object> recipe : (List<Map<String, Object>>) recipes_419_config.get((Object)"smelting")) {
@@ -495,7 +495,7 @@ public class CraftingManager {
         }
 
         //TODO 整理并确定版本
-        if (protocol >= ProtocolInfo.v1_19_80) {
+        if (protocol >= ProtocolInfo.v1_19_60) {
             for (SmithingRecipe recipe : this.getSmithingRecipeMap().values()) {
                 pk.addShapelessRecipe(recipe);
             }

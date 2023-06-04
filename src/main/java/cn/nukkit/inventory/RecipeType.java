@@ -25,7 +25,7 @@ public enum RecipeType {
 
     public int getNetworkType(int protocol) {
         if (this == SMITHING_TRANSFORM) {
-            return protocol >= ProtocolInfo.v1_19_63 ? networkType : 0; //TODO 检查版本
+            return protocol >= ProtocolInfo.v1_19_60 ? networkType : 0;
         }
         return networkType;
     }
