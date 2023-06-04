@@ -72,7 +72,7 @@ public interface ProtocolInfo {
     int v1_19_70_24 = 574;
     int v1_19_70 = 575;
     int v1_19_80 = 582;
-    int v1_20_0 = 588;
+    int v1_20_0 = 589;
 
     int CURRENT_PROTOCOL = Utils.dynamic(v1_20_0);
 
