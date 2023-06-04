@@ -917,9 +917,9 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
             }
 
             //common item
-            int i = RuntimeItems.getLegacyIdFromLegacyString(namespacedId);
-            if (i > 0) {
-                return get(i, meta.orElse(0));
+            int id = RuntimeItems.getLegacyIdFromLegacyString(namespacedId);
+            if (id > 0) {
+                return get(id, meta.orElse(0));
             } else if (namespaceGroup != null && !namespaceGroup.equals("minecraft:")) {
                 return Item.AIR_ITEM;
             }
@@ -934,13 +934,14 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
 
         int id = 0;
         try {
-            id = ItemID.class.getField(name.toUpperCase()).getInt(null);
-        } catch (Exception ignore1) {
+            id = BlockID.class.getField(name.toUpperCase()).getInt(null);
+            if (id > 255) {
+                id = 255 - id;
+            }
+        } catch (Exception ignore) {
             try {
-                id = BlockID.class.getField(name.toUpperCase()).getInt(null);
-                return get(id, meta.orElse(0));
-            } catch (Exception ignore2) {
-
+                id = ItemID.class.getField(name.toUpperCase()).getInt(null);
+            } catch (Exception ignore1) {
             }
         }
         return get(id, meta.orElse(0));
