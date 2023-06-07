@@ -367,6 +367,7 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
     private static final List<Item> creative567 = new ObjectArrayList<>();
     private static final List<Item> creative575 = new ObjectArrayList<>();
     private static final List<Item> creative582 = new ObjectArrayList<>();
+    private static final List<Item> creative589 = new ObjectArrayList<>();
 
     @SuppressWarnings("unchecked")
     private static void initCreativeItems() {
@@ -472,6 +473,7 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
         registerCreativeItemsNew(ProtocolInfo.v1_19_60, ProtocolInfo.v1_19_60, creative567);
         registerCreativeItemsNew(ProtocolInfo.v1_19_70, ProtocolInfo.v1_19_70, creative575);
         registerCreativeItemsNew(ProtocolInfo.v1_19_80, ProtocolInfo.v1_19_80, creative582);
+        registerCreativeItemsNew(ProtocolInfo.v1_20_0, ProtocolInfo.v1_20_0, creative589);
     }
 
     private static void registerCreativeItemsNew(int protocol, int blockPaletteProtocol, List<Item> creativeItems) {
@@ -603,8 +605,9 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
             case v1_19_70:
                 return new ArrayList<>(Item.creative575);
             case v1_19_80:
-            case v1_20_0:
                 return new ArrayList<>(Item.creative582);
+            case v1_20_0:
+                return new ArrayList<>(Item.creative589);
             default:
                 throw new IllegalArgumentException("Tried to get creative items for unsupported protocol version: " + protocol);
         }
@@ -683,6 +686,9 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
                 break;
             case v1_19_80:
                 Item.creative582.add(item.clone());
+                break;
+            case v1_20_0:
+                Item.creative589.add(item.clone());
                 break;
             default:
                 throw new IllegalArgumentException("Tried to register creative items for unsupported protocol version: " + protocol);
