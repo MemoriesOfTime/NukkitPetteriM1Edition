@@ -533,6 +533,9 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
         Item.creative560.clear();
         Item.creative567.clear();
         Item.creative575.clear();
+        Item.creative582.clear();
+        Item.creative589.clear();
+        //TODO Multiversion 添加新版本支持时修改这里
     }
 
     public static ArrayList<Item> getCreativeItems() {
@@ -816,6 +819,9 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
         if (RuntimeItems.getMapping(v1_19_80).registerCustomItem(item)) {
             addCreativeItem(v1_19_80, item);
         }
+        if (RuntimeItems.getMapping(v1_20_0).registerCustomItem(item)) {
+            addCreativeItem(v1_20_0, item);
+        }
         return true;
     }
 
@@ -837,7 +843,8 @@ public class Item implements Cloneable, BlockID, ItemID, ProtocolInfo {
                     RuntimeItems.getMapping(v1_19_50).deleteCustomItem(item) &&
                     RuntimeItems.getMapping(v1_19_60).deleteCustomItem(item) &&
                     RuntimeItems.getMapping(v1_19_70).deleteCustomItem(item) &&
-                    RuntimeItems.getMapping(v1_19_80).deleteCustomItem(item);
+                    RuntimeItems.getMapping(v1_19_80).deleteCustomItem(item) &&
+                    RuntimeItems.getMapping(v1_20_0).deleteCustomItem(item);
         }else {
             return false;
         }
