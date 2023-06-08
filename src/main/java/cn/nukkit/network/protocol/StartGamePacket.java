@@ -311,7 +311,7 @@ public class StartGamePacket extends DataPacket {
                                 this.putBoolean(this.clientSideGenerationEnabled);
                                 if (protocol >= ProtocolInfo.v1_19_80) {
                                     this.putBoolean(this.blockNetworkIdsHashed);
-                                    if (protocol >= ProtocolInfo.v1_20_0) {
+                                    if (protocol >= ProtocolInfo.v1_20_0_23) {
                                         this.putBoolean(this.networkPermissions.isServerAuthSounds());
                                     }
                                 }

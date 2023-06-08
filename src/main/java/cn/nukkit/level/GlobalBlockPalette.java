@@ -574,6 +574,7 @@ public class GlobalBlockPalette {
             case ProtocolInfo.v1_19_70_24:
             case ProtocolInfo.v1_19_70:
             case ProtocolInfo.v1_19_80:
+            case ProtocolInfo.v1_20_0_23:
             case ProtocolInfo.v1_20_0:
                 return legacyToRuntimeId(protocol, id, meta, legacyId);
             // Multiversion
@@ -613,6 +614,7 @@ public class GlobalBlockPalette {
                 return legacyToRuntimeId575;
             case ProtocolInfo.v1_19_80:
                 return legacyToRuntimeId582;
+            case ProtocolInfo.v1_20_0_23:
             case ProtocolInfo.v1_20_0:
                 return legacyToRuntimeId589;
             default:
@@ -706,7 +708,7 @@ public class GlobalBlockPalette {
     }
 
     public static int getLegacyFullId(int protocolId, int runtimeId) {
-        if (protocolId >= ProtocolInfo.v1_20_0) {
+        if (protocolId >= ProtocolInfo.v1_20_0_23) {
             return runtimeIdToLegacy589.get(runtimeId);
         } else if (protocolId >= ProtocolInfo.v1_19_80) {
             return runtimeIdToLegacy582.get(runtimeId);

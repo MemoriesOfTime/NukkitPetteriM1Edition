@@ -25,7 +25,7 @@ public class EmotePacket extends DataPacket {
     public void decode() {
         this.runtimeId = this.getEntityRuntimeId();
         this.emoteID = this.getString();
-        if (this.protocol >= ProtocolInfo.v1_20_0) {
+        if (this.protocol >= ProtocolInfo.v1_20_0_23) {
             this.xuid = this.getString();
             this.platformId = this.getString();
         }
@@ -37,7 +37,7 @@ public class EmotePacket extends DataPacket {
         this.reset();
         this.putEntityRuntimeId(this.runtimeId);
         this.putString(this.emoteID);
-        if (this.protocol >= ProtocolInfo.v1_20_0) {
+        if (this.protocol >= ProtocolInfo.v1_20_0_23) {
             this.putString(this.xuid);
             this.putString(this.platformId);
         }
