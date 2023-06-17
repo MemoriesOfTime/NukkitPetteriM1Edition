@@ -2,6 +2,7 @@ package cn.nukkit.entity.mob;
 
 import cn.nukkit.Player;
 import cn.nukkit.Server;
+import cn.nukkit.entity.BaseEntity;
 import cn.nukkit.entity.Entity;
 import cn.nukkit.entity.EntityCreature;
 import cn.nukkit.entity.data.ByteEntityData;
@@ -141,6 +142,10 @@ public class EntityWolf extends EntityTameableMob {
             this.isAngryTo = creature.getId();
             this.setAngry(true);
             return true;
+        }
+
+        if (this.isInLove()) {
+            return creature instanceof BaseEntity && ((BaseEntity) creature).isInLove() && creature.isAlive() && !creature.closed && creature.getNetworkId() == this.getNetworkId() && distance <= 100;
         }
 
         return false;
@@ -384,5 +389,15 @@ public class EntityWolf extends EntityTameableMob {
     @Override
     public boolean canTarget(Entity entity) {
         return entity.canBeFollowed();
+    }
+
+    @Override
+    public boolean isMeetAttackConditions(Vector3 target) {
+        if (target instanceof BaseEntity baseEntity) {
+            if (this.isInLove() && baseEntity.getNetworkId() == this.getNetworkId() && baseEntity.isFriendly() == this.isFriendly()) {
+                return false;
+            }
+        }
+        return super.isMeetAttackConditions(target);
     }
 }
