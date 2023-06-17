@@ -16,7 +16,6 @@ import cn.nukkit.item.ItemDye;
 import cn.nukkit.item.ItemID;
 import cn.nukkit.level.Sound;
 import cn.nukkit.level.format.FullChunk;
-import cn.nukkit.level.particle.HeartParticle;
 import cn.nukkit.level.particle.ItemBreakParticle;
 import cn.nukkit.math.Vector3;
 import cn.nukkit.nbt.tag.CompoundTag;
@@ -112,7 +111,7 @@ public class EntityWolf extends EntityTameableMob {
             return true;
         }
 
-        if (creature instanceof Player) {
+        if (creature instanceof Player && !this.isInLove()) {
             if (distance <= 64 && this.isBeggingItem(((Player) creature).getInventory().getItemInHandFast())) {
                 // TODO: Begging
                 if (distance <= 9) {
@@ -265,15 +264,6 @@ public class EntityWolf extends EntityTameableMob {
             this.angryDuration--;
         }
 
-        if (this.isInLove()) {
-            this.inLoveTicks -= tickDiff;
-            if (this.age % 20 == 0) {
-                for (int i = 0; i < 3; i++) {
-                    this.getLevel().addParticle(new HeartParticle(this.add(Utils.rand(-1.0,1.0), this.getMountedYOffset() + Utils.rand(-1.0,1.0), Utils.rand(-1.0, 1.0))));
-                }
-            }
-        }
-
         if (this.isInsideOfWater()) {
             afterInWater = 0;
         } else if (afterInWater != -1) {
@@ -292,15 +282,6 @@ public class EntityWolf extends EntityTameableMob {
         }
 
         return hasUpdate;
-    }
-
-    public void setInLove() {
-        this.inLoveTicks = 600;
-        this.setDataFlag(DATA_FLAGS, DATA_FLAG_INLOVE);
-    }
-
-    public boolean isInLove() {
-        return inLoveTicks > 0;
     }
 
     @Override

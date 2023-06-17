@@ -224,7 +224,7 @@ public class EntityStrider extends EntityWalkingAnimal implements EntityRideable
 
     @Override
     public boolean targetOption(EntityCreature creature, double distance) {
-        if (creature instanceof Player player) {
+        if (!this.isInLove() && creature instanceof Player player) {
             return player.spawned && player.isAlive() && !player.closed && distance <= 49
                     && player.getInventory().getItemInHandFast().getId() == Item.WARPED_FUNGUS_ON_A_STICK;
         }

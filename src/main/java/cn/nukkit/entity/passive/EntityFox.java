@@ -59,7 +59,7 @@ public class EntityFox extends EntityWalkingAnimal {
 
     @Override
     public boolean targetOption(EntityCreature creature, double distance) {
-        if (creature instanceof Player) {
+        if (!this.isInLove() && creature instanceof Player) {
             Player player = (Player) creature;
             return player.spawned && player.isAlive() && !player.closed && distance <= 49 && player.getInventory().getItemInHandFast().getId() == Item.SWEET_BERRIES;
         }
