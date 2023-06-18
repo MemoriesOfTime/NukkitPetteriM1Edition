@@ -2,8 +2,12 @@ package cn.nukkit.utils;
 
 import cn.nukkit.Server;
 import cn.nukkit.nbt.stream.FastByteArrayOutputStream;
+import cn.powernukkitx.libdeflate.CompressionType;
+import cn.powernukkitx.libdeflate.Libdeflate;
+import cn.powernukkitx.libdeflate.LibdeflateCompressor;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -14,7 +18,17 @@ public final class ZlibThreadLocal implements ZlibProvider {
     private static final ThreadLocal<Deflater> DEFLATER = ThreadLocal.withInitial(Deflater::new);
     private static final ThreadLocal<Inflater> INFLATER_RAW = ThreadLocal.withInitial(() -> new Inflater(true));
     private static final ThreadLocal<Deflater> DEFLATER_RAW = ThreadLocal.withInitial(() -> new Deflater(7, true));
-    private static final ThreadLocal<byte[]> BUFFER = ThreadLocal.withInitial(() -> new byte[8192]);
+    private static final ThreadLocal<LibdeflateCompressor> PNX_DEFLATER_RAW = ThreadLocal.withInitial(() -> new LibdeflateCompressor(7) {
+        @Override
+        @SuppressWarnings("deprecation")
+        protected void finalize() {
+            if (!closed) {
+                close();
+            }
+        }
+    });
+    private static final int BUFFER_LEN = 8192;
+    private static final ThreadLocal<byte[]> BUFFER = ThreadLocal.withInitial(() -> new byte[BUFFER_LEN]);
 
     @Override
     public byte[] deflate(byte[][] datas, int level) throws IOException {
@@ -61,6 +75,24 @@ public final class ZlibThreadLocal implements ZlibProvider {
 
     @Override
     public byte[] deflateRaw(byte[][] datas, int level) throws IOException {
+        if (Libdeflate.isAvailable()) {
+            LibdeflateCompressor deflater = level == 7 ? PNX_DEFLATER_RAW.get() : new LibdeflateCompressor(level);
+            try {
+                FastByteArrayOutputStream bos = ThreadCache.fbaos.get();
+                bos.reset();
+                for (var data : datas) {
+                    bos.write(data, 0, data.length);
+                }
+                byte[] data = bos.toByteArray();
+                byte[] buffer = deflater.getCompressBound(data.length, CompressionType.DEFLATE) < BUFFER_LEN ? BUFFER.get() : new byte[data.length];
+                int size = deflater.compress(data, buffer, CompressionType.DEFLATE);
+                return Arrays.copyOf(buffer, size);
+            } finally {
+                if (level != 7) {
+                    deflater.close();
+                }
+            }
+        }
         Deflater deflater = DEFLATER_RAW.get();
         deflater.reset();
         deflater.setLevel(datas.length < Server.getInstance().networkCompressionThreshold ? 0 : level);
@@ -86,6 +118,18 @@ public final class ZlibThreadLocal implements ZlibProvider {
 
     @Override
     public byte[] deflateRaw(byte[] data, int level) throws IOException {
+        if (Libdeflate.isAvailable()) {
+            LibdeflateCompressor deflater = level == 7 ? PNX_DEFLATER_RAW.get() : new LibdeflateCompressor(level);
+            try {
+                byte[] buffer = deflater.getCompressBound(data.length, CompressionType.DEFLATE) < BUFFER_LEN ? BUFFER.get() : new byte[data.length];
+                int size = deflater.compress(data, buffer, CompressionType.DEFLATE);
+                return Arrays.copyOf(buffer, size);
+            } finally {
+                if (level != 7) {
+                    deflater.close();
+                }
+            }
+        }
         Deflater deflater = DEFLATER_RAW.get();
         deflater.reset();
         deflater.setLevel(level);

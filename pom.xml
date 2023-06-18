@@ -50,6 +50,10 @@
             <id>repo-lanink-cn</id>
             <url>https://repo.lanink.cn/</url>
         </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -207,6 +211,11 @@
             <groupId>com.intellij</groupId>
             <artifactId>annotations</artifactId>
             <version>12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.powernukkitx</groupId>
+            <artifactId>libdeflate-java</artifactId>
+            <version>0.0.2-PNX</version>
         </dependency>
     </dependencies>
 
