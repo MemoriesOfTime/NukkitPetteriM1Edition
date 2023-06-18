@@ -89,7 +89,7 @@ public abstract class DataPacket extends BinaryStream implements Cloneable {
             } else if (protocol >= ProtocolInfo.v1_16_0) {
                 batch.payload = Zlib.deflateRaw(data, level);
             } else {
-                batch.payload = Zlib.deflate(data, level);
+                batch.payload = Zlib.deflatePre16Packet(data, level);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
