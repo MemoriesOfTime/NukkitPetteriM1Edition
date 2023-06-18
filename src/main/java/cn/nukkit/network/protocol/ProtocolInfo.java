@@ -278,6 +278,8 @@ public interface ProtocolInfo {
     byte GAME_TEST_RESULTS_PACKET = (byte) 0xc3;
     byte UPDATE_CLIENT_INPUT_LOCKS = (byte) 0xc4;
     byte CLIENT_CHEAT_ABILITY_PACKET = (byte) 0xc5;
+    byte CAMERA_PRESETS_PACKET = (byte) 0xc6;
+    byte UNLOCKED_RECIPES_PACKET = (byte) 0xc7;
 
     int CAMERA_INSTRUCTION_PACKET = 300;
     int COMPRESSED_BIOME_DEFINITIONS_LIST = 301;
