@@ -47,6 +47,7 @@ import cn.nukkit.item.customitem.ItemCustomArmor;
 import cn.nukkit.item.customitem.ItemCustomTool;
 import cn.nukkit.item.enchantment.Enchantment;
 import cn.nukkit.item.food.Food;
+import cn.nukkit.lang.LangCode;
 import cn.nukkit.lang.TextContainer;
 import cn.nukkit.lang.TranslationContainer;
 import cn.nukkit.level.*;
@@ -5300,6 +5301,10 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
      */
     public String getName() {
         return this.username;
+    }
+
+    public LangCode getLanguageCode() {
+        return LangCode.valueOf(this.getLoginChainData().getLanguageCode());
     }
 
     @Override

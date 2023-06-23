@@ -287,11 +287,15 @@ public interface ProtocolInfo {
     int OPEN_SIGN = 303;
 
     static int toNewProtocolID(byte oldProtocolID) {
+        if (oldProtocolID < 0 && oldProtocolID >= -56) { // Hack: (byte) 200+ --> (int) 300+
+            return oldProtocolID + 356;
+        }
         return oldProtocolID & 0xff;
     }
 
     // 这是为了兼容nkx
     // MC packet IDs continue from 300 (0x12c)
     // Hack: 100 is added to the IDs below on encode
+    byte __INTERNAL__CAMERA_INSTRUCTION_PACKET = (byte) 200; // 300
     byte __INTERNAL__OPEN_SIGN_PACKET = (byte) 203; // 303
 }
