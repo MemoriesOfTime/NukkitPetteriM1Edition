@@ -3116,14 +3116,6 @@ public class Server {
             put("auto-tick-rate-limit", 20);
             put("base-tick-rate", 1);
             put("always-tick-players", false);
-
-            put("enable-timings", false);
-            put("timings-verbose", false);
-            put("timings-privacy", false);
-            put("timings-history-interval", 6000);
-            put("timings-history-length", 72000);
-            put("timings-bypass-max", false);
-
             put("light-updates", false);
             put("clear-chunk-tick-list", true);
             put("cache-chunks", false);
