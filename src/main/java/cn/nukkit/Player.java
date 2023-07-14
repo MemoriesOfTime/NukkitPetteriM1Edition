@@ -4704,6 +4704,10 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
             return;
         }
 
+        if (target.onTouch(this, playerInteractEvent.getAction()) != 0) {
+            return;
+        }
+
         switch (target.getId()) {
             case Block.NOTEBLOCK:
                 ((BlockNoteblock) target).emitSound();

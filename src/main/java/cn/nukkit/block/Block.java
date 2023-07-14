@@ -3,6 +3,7 @@ package cn.nukkit.block;
 import cn.nukkit.Player;
 import cn.nukkit.Server;
 import cn.nukkit.entity.Entity;
+import cn.nukkit.event.player.PlayerInteractEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemBlock;
 import cn.nukkit.item.ItemTool;
@@ -21,6 +22,7 @@ import cn.nukkit.utils.BlockColor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Objects;
@@ -380,6 +382,8 @@ public abstract class Block extends Position implements Metadatable, Cloneable, 
             list[RED_NETHER_BRICK_STAIRS] = BlockStairsRedNetherBrick.class; //439
             list[SMOOTH_QUARTZ_STAIRS] = BlockStairsSmoothQuartz.class; //440
 
+            list[LECTERN] = BlockLectern.class; //449
+
             list[SMITHING_TABLE] = BlockSmithingTable.class; //457
             list[BARREL] = BlockBarrel.class; //458
 
@@ -615,6 +619,11 @@ public abstract class Block extends Position implements Metadatable, Cloneable, 
 
     public void onNeighborChange(@NotNull BlockFace side) {
 
+    }
+
+    public int onTouch(@Nullable Player player, PlayerInteractEvent.Action action) {
+        this.onUpdate(Level.BLOCK_UPDATE_TOUCH);
+        return 0;
     }
 
     public boolean onActivate(Item item) {
