@@ -4708,24 +4708,6 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
             return;
         }
 
-        switch (target.getId()) {
-            case Block.NOTEBLOCK:
-                ((BlockNoteblock) target).emitSound();
-                return;
-            case Block.DRAGON_EGG:
-                if (!this.isCreative()) {
-                    ((BlockDragonEgg) target).teleport();
-                    return;
-                }
-                break;
-            case Block.ITEM_FRAME_BLOCK:
-                BlockEntity itemFrame = this.level.getBlockEntity(pos);
-                if (itemFrame instanceof BlockEntityItemFrame && ((BlockEntityItemFrame) itemFrame).dropItem(this)) {
-                    return;
-                }
-                break;
-        }
-
         Block block = target.getSide(face);
         if (block.getId() == Block.FIRE) {
             this.level.setBlock(block, Block.get(BlockID.AIR), true);

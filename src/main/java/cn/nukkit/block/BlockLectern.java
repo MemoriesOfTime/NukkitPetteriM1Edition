@@ -110,11 +110,15 @@ public class BlockLectern extends BlockTransparentMeta implements Faceable {
         return super.place(item, block, target, face, fx, fy, fz, player);
     }
 
+    @Override
     public int onTouch(@Nullable Player player, Action action) {
-        onUpdate(Level.BLOCK_UPDATE_TOUCH);
-        if (player != null && action == Action.LEFT_CLICK_BLOCK && player.isSurvival()) {
-            dropBook(player);
-            return 1;
+        this.onUpdate(Level.BLOCK_UPDATE_TOUCH);
+        BlockEntity t = this.getLevel().getBlockEntity(this);
+        if (t instanceof BlockEntityLectern blockEntityLectern) {
+            if (player != null && action == Action.LEFT_CLICK_BLOCK && !blockEntityLectern.getBook().isNull()) {
+                dropBook(player);
+                return 1;
+            }
         }
         return 0;
     }
