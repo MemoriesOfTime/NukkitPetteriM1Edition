@@ -3923,6 +3923,11 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
                 this.level.addChunkPacket(this.getChunkX(), this.getChunkZ(), packet);
                 break;
             case ProtocolInfo.INVENTORY_TRANSACTION_PACKET:
+                if (!this.spawned || !this.isAlive()) {
+                    log.debug("Player {} sent inventory transaction packet while not spawned or not alive", this.username);
+                    break packetswitch;
+                }
+
                 if (this.isSpectator()) {
                     this.sendAllInventories();
                     break;
@@ -5479,6 +5484,30 @@ public class Player extends EntityHuman implements CommandSender, InventoryHolde
 
                 if (this.playerUIInventory != null) {
                     this.playerUIInventory.clearAll();
+                }
+            } else {
+                // 发包给客户端清除不死图腾，防止影响自杀等操作
+                if (this.getOffhandInventory().getItemFast(0) instanceof ItemTotem) {
+                    InventorySlotPacket pk = new InventorySlotPacket();
+                    pk.slot = 0;
+                    pk.item = Item.AIR_ITEM;
+                    int id = this.getWindowId(this.getOffhandInventory());
+                    if (id != -1) {
+                        pk.inventoryId = id;
+                        this.dataPacket(pk);
+                    }
+                }
+                int id = this.getWindowId(this.getInventory());
+                if (id != -1) {
+                    for (Map.Entry<Integer, Item> entry : this.getInventory().getContents().entrySet()) {
+                        if (entry.getValue() instanceof ItemTotem) {
+                            InventorySlotPacket pk = new InventorySlotPacket();
+                            pk.slot = entry.getKey();
+                            pk.item = Item.AIR_ITEM;
+                            pk.inventoryId = id;
+                            this.dataPacket(pk);
+                        }
+                    }
                 }
             }
 
