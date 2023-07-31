@@ -44,8 +44,10 @@ public interface BlockID {
     int DETECTOR_RAIL = 28;
     int STICKY_PISTON = 29;
     int COBWEB = 30;
+    int WEB = 30;
     int TALL_GRASS = 31;
     int BUSH = 32;
+    int DEADBUSH = 32;
     int DEAD_BUSH = 32;
     int PISTON = 33;
     int PISTON_HEAD = 34;
@@ -152,6 +154,7 @@ public interface BlockID {
     int STONE_BRICK_STAIRS = 109;
     int MYCELIUM = 110;
     int WATER_LILY = 111;
+    int WATERLILY = 111;
     int LILY_PAD = 111;
     int NETHER_BRICKS = 112;
     int NETHER_BRICK_BLOCK = 112;
@@ -229,6 +232,7 @@ public interface BlockID {
     int DARK_OAK_WOOD_STAIRS = 164;
     int DARK_OAK_WOODEN_STAIRS = 164;
     int SLIME_BLOCK = 165;
+    int SLIME = 165;
     int GLOW_STICK = 166;
     int IRON_TRAPDOOR = 167;
     int PRISMARINE = 168;
@@ -237,6 +241,7 @@ public interface BlockID {
     int HAY_BLOCK = 170;
     int CARPET = 171;
     int TERRACOTTA = 172;
+    int HARDENED_CLAY = 172;
     int COAL_BLOCK = 173;
     int PACKED_ICE = 174;
     int DOUBLE_PLANT = 175;
@@ -275,8 +280,8 @@ public interface BlockID {
     int ICE_FROSTED = 207;
     int END_ROD = 208;
     int END_GATEWAY = 209;
-    // 210 Allow in Education Edition
-    // 211 Deny in Education Edition
+    int ALLOW = 210;
+    int DENY = 211;
     int BORDER_BLOCK = 212;
     int MAGMA = 213;
     int MAGMA_BLOCK = 213;
@@ -372,6 +377,18 @@ public interface BlockID {
     int SMOOTH_STONE = 438;
     int RED_NETHER_BRICK_STAIRS = 439;
     int SMOOTH_QUARTZ_STAIRS = 440;
+
+    int LECTERN = 449;
+    int GRINDSTONE = 450;
+    int BLAST_FURNACE = 451;
+    int STONECUTTER_BLOCK = 452;
+    int SMOKER = 453;
+
+    int CARTOGRAPHY_TABLE = 455;
+    int FLETCHING_TABLE = 456;
+
+    int LOOM = 459;
+
     int SMITHING_TABLE = 457;
     int BARREL = 458;
     int BELL = 461;

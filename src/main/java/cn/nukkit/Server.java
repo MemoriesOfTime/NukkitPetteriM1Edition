@@ -9,6 +9,7 @@ import cn.nukkit.entity.Attribute;
 import cn.nukkit.entity.Entity;
 import cn.nukkit.entity.EntityHuman;
 import cn.nukkit.entity.data.Skin;
+import cn.nukkit.entity.data.profession.Profession;
 import cn.nukkit.entity.item.*;
 import cn.nukkit.entity.mob.*;
 import cn.nukkit.entity.passive.*;
@@ -76,7 +77,6 @@ import cn.nukkit.scheduler.ServerScheduler;
 import cn.nukkit.scheduler.Task;
 import cn.nukkit.utils.*;
 import cn.nukkit.utils.bugreport.ExceptionHandler;
-import co.aikar.timings.Timings;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonParser;
@@ -91,6 +91,7 @@ import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.impl.Iq80DBFactory;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.*;
@@ -99,6 +100,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -198,18 +200,23 @@ public class Server {
 
     private static final Pattern uuidPattern = Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}.dat$");
 
-    private final Map<Integer, Level> levels = new HashMap<Integer, Level>() {
-        public Level put(Integer key, Level value) {
+    private final Map<Integer, Level> levels = new ConcurrentHashMap<>() {
+        @Override
+        public Level put(@NotNull Integer key, @NotNull Level value) {
             Level result = super.put(key, value);
             levelArray = levels.values().toArray(new Level[0]);
             return result;
         }
+
+        @Override
         public boolean remove(Object key, Object value) {
             boolean result = super.remove(key, value);
             levelArray = levels.values().toArray(new Level[0]);
             return result;
         }
-        public Level remove(Object key) {
+
+        @Override
+        public Level remove(@NotNull Object key) {
             Level result = super.remove(key);
             levelArray = levels.values().toArray(new Level[0]);
             return result;
@@ -500,6 +507,10 @@ public class Server {
      * Network Compression Threshold
      */
     public int networkCompressionThreshold;
+    /**
+     * Enable Spark Plugin
+     */
+    public boolean enableSpark;
 
     Server(final String filePath, String dataPath, String pluginPath, boolean loadPlugins, boolean debug) {
         Preconditions.checkState(instance == null, "Already initialized!");
@@ -545,7 +556,7 @@ public class Server {
             ExceptionHandler.registerExceptionHandler();
             Sentry.init(options -> {
                 options.setDsn("https://b61b4bfc0057480e9644111aa4e78844@o4504694990700544.ingest.sentry.io/4504694992535552");
-                options.setTracesSampleRate(0.5); //错误报告率 0.0-1.0
+                options.setTracesSampleRate(0.8); //错误报告率 0.0-1.0
                 options.setDebug(false);
                 options.setTag("nukkit_version", Nukkit.VERSION);
                 options.setTag("branch", Nukkit.getBranch());
@@ -617,6 +628,7 @@ public class Server {
         this.commandMap = new SimpleCommandMap(this);
 
         registerEntities();
+        registerProfessions();
         registerBlockEntities();
 
         Block.init();
@@ -668,6 +680,9 @@ public class Server {
         this.pluginManager.loadInternalPlugin();
         if (loadPlugins) {
             this.pluginManager.loadPlugins(this.pluginPath);
+            if (this.enableSpark) {
+                SparkInstaller.initSpark(this);
+            }
             this.enablePlugins(PluginLoadOrder.STARTUP);
         }
 
@@ -975,9 +990,11 @@ public class Server {
 
         this.pluginManager.registerInterface(JavaPluginLoader.class);
         this.pluginManager.loadPlugins(this.pluginPath);
+        if (this.enableSpark) {
+            SparkInstaller.initSpark(this);
+        }
         this.enablePlugins(PluginLoadOrder.STARTUP);
         this.enablePlugins(PluginLoadOrder.POSTWORLD);
-        Timings.reset();
     }
 
     public void shutdown() {
@@ -1045,9 +1062,6 @@ public class Server {
                 this.getLogger().debug("Closing name lookup DB...");
                 nameLookup.close();
             }
-
-            this.getLogger().debug("Disabling timings...");
-            Timings.stopServer();
         } catch (Exception e) {
             log.fatal("Exception happened while shutting down, exiting the process", e);
             System.exit(1);
@@ -1122,6 +1136,7 @@ public class Server {
 
                         if (allocated > 0 || !doLevelGC) {
                             try {
+                                //noinspection BusyWait
                                 Thread.sleep(allocated, 900000);
                             } catch (Exception e) {
                                 this.getLogger().logException(e);
@@ -1129,12 +1144,11 @@ public class Server {
                         }
                     }
                 } catch (RuntimeException e) {
-                    this.getLogger().logException(e);
+                    log.error("A RuntimeException happened while ticking the server", e);
                 }
             }
         } catch (Throwable e) {
-            log.fatal("Exception happened while ticking server", e);
-            log.fatal(Utils.getAllThreadDumps());
+            log.fatal("Exception happened while ticking server\n{}", Utils.getAllThreadDumps(), e);
         }
     }
 
@@ -1226,7 +1240,9 @@ public class Server {
     }
 
     public void sendRecipeList(Player player) {
-        if (player.protocol >= ProtocolInfo.v1_20_0_23) {
+        if (player.protocol >= ProtocolInfo.v1_20_10_21) {
+            player.dataPacket(CraftingManager.packet594);
+        } else if (player.protocol >= ProtocolInfo.v1_20_0_23) {
             player.dataPacket(CraftingManager.packet589);
         } else if (player.protocol >= ProtocolInfo.v1_19_80) {
             player.dataPacket(CraftingManager.packet582);
@@ -1289,6 +1305,10 @@ public class Server {
 
             try {
                 long levelTime = System.currentTimeMillis();
+                level.providerLock.readLock().lock();
+                if (level.getProvider() == null) {//世界在其他线程上卸载
+                    continue;
+                }
                 level.doTick(currentTick);
                 int tickMs = (int) (System.currentTimeMillis() - levelTime);
                 level.tickRateTime = tickMs;
@@ -1314,13 +1334,14 @@ public class Server {
                 }
             } catch (Exception e) {
                 log.error(this.baseLang.translateString("nukkit.level.tickError", new String[]{level.getFolderName(), Utils.getExceptionMessage(e)}));
+            } finally {
+                level.providerLock.readLock().unlock();
             }
         }
     }
 
     public void doAutoSave() {
         if (this.autoSave) {
-            if (Timings.levelSaveTimer != null) Timings.levelSaveTimer.startTiming();
             for (Player player : new ArrayList<>(this.players.values())) {
                 if (player.isOnline()) {
                     player.save(true);
@@ -1334,7 +1355,6 @@ public class Server {
                     level.save();
                 }
             }
-            if (Timings.levelSaveTimer != null) Timings.levelSaveTimer.stopTiming();
         }
     }
 
@@ -1355,23 +1375,15 @@ public class Server {
             return;
         }
 
-        if (Timings.isTimingsEnabled()) {
-            Timings.fullServerTickTimer.startTiming();
-        }
-
         ++this.tickCounter;
 
-        if (Timings.connectionTimer != null) Timings.connectionTimer.startTiming();
         this.network.processInterfaces();
 
         if (this.rcon != null) {
             this.rcon.check();
         }
-        if (Timings.connectionTimer != null) Timings.connectionTimer.stopTiming();
 
-        if (Timings.schedulerTimer != null) Timings.schedulerTimer.startTiming();
         this.scheduler.mainThreadHeartbeat(this.tickCounter);
-        if (Timings.schedulerTimer != null) Timings.schedulerTimer.stopTiming();
 
         this.checkTickUpdates(this.tickCounter);
 
@@ -1409,10 +1421,6 @@ public class Server {
             for (Level level : this.levelArray) {
                 level.doChunkGarbageCollection();
             }
-        }
-
-        if (Timings.isTimingsEnabled()) {
-            Timings.fullServerTickTimer.stopTiming();
         }
 
         long nowNano = System.nanoTime();
@@ -2744,6 +2752,10 @@ public class Server {
         return currentThread;
     }
 
+    private void registerProfessions() {
+        Profession.init();
+    }
+
     /**
      * Internal method to register all default entities
      */
@@ -2893,6 +2905,7 @@ public class Server {
         BlockEntity.registerBlockEntity(BlockEntity.DISPENSER, BlockEntityDispenser.class);
         BlockEntity.registerBlockEntity(BlockEntity.MOB_SPAWNER, BlockEntitySpawner.class);
         BlockEntity.registerBlockEntity(BlockEntity.MUSIC, BlockEntityMusic.class);
+        BlockEntity.registerBlockEntity(BlockEntity.LECTERN, BlockEntityLectern.class);
         BlockEntity.registerBlockEntity(BlockEntity.CAMPFIRE, BlockEntityCampfire.class);
         BlockEntity.registerBlockEntity(BlockEntity.BELL, BlockEntityBell.class);
         BlockEntity.registerBlockEntity(BlockEntity.BARREL, BlockEntityBarrel.class);
@@ -3027,26 +3040,23 @@ public class Server {
         this.minimumProtocol = this.getPropertyInt("multiversion-min-protocol", 0);
         this.whitelistReason = this.getPropertyString("whitelist-reason", "§cServer is white-listed").replace("§n", "\n");
         this.enableExperimentMode = this.getPropertyBoolean("enable-experiment-mode", true);
-        this.asyncChunkSending = this.getPropertyBoolean("async-chunks", false);
+        this.asyncChunkSending = this.getPropertyBoolean("async-chunks", true);
         this.deprecatedVerbose = this.getPropertyBoolean("deprecated-verbose", true);
         switch (this.getPropertyString("server-authoritative-movement")) {
-            case "client-auth":
-                this.serverAuthoritativeMovementMode = 0;
-                break;
-            case "server-auth-with-rewind":
-                this.serverAuthoritativeMovementMode = 2;
-                break;
-            case "server-auth":
-            default:
-                this.serverAuthoritativeMovementMode = 1;
-                break;
+            case "client-auth" -> this.serverAuthoritativeMovementMode = 0;
+            case "server-auth-with-rewind" -> this.serverAuthoritativeMovementMode = 2;
+            default -> this.serverAuthoritativeMovementMode = 1;
         }
         this.serverAuthoritativeBlockBreaking = this.getPropertyBoolean("server-authoritative-block-breaking", true);
         this.encryptionEnabled = this.getPropertyBoolean("encryption", true);
+        if (!this.encryptionEnabled) {
+            log.warn("Encryption is not enabled. For better security, it's recommended to enable it if you don't use a proxy software.");
+        }
         this.useWaterdog = this.getPropertyBoolean("use-waterdog", false);
         this.useSnappy = this.getPropertyBoolean("use-snappy-compression", false);
         this.useClientSpectator = this.getPropertyBoolean("use-client-spectator", true);
         this.networkCompressionThreshold = this.getPropertyInt("compression-threshold", 256);
+        this.enableSpark = this.getPropertyBoolean("enable-spark", false);
         this.c_s_spawnThreshold = (int) Math.ceil(Math.sqrt(this.spawnThreshold));
         try {
             this.gamemode = this.getPropertyInt("gamemode", 0) & 0b11;
@@ -3131,12 +3141,6 @@ public class Server {
             put("auto-tick-rate-limit", 20);
             put("base-tick-rate", 1);
             put("always-tick-players", false);
-            put("enable-timings", false);
-            put("timings-verbose", false);
-            put("timings-privacy", false);
-            put("timings-history-interval", 6000);
-            put("timings-history-length", 72000);
-            put("timings-bypass-max", false);
             put("light-updates", false);
             put("clear-chunk-tick-list", true);
             put("cache-chunks", false);
@@ -3188,7 +3192,7 @@ public class Server {
             put("min-mtu", 576);
             put("max-mtu", 1492);
             put("enable-experiment-mode", false);
-            put("async-chunks", false);
+            put("async-chunks", true);
             put("deprecated-verbose", true);
             put("server-authoritative-movement", "server-auth");
             put("server-authoritative-block-breaking", true);
@@ -3197,6 +3201,8 @@ public class Server {
             put("use-snappy-compression", false);
             put("use-client-spectator", true);
             put("compression-threshold", "256");
+            put("enable-spark", false);
+            put("hastebin-token", "");
         }
     }
 
