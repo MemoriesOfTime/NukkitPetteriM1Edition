@@ -1,0 +1,122 @@
+# Konfigūracijos failas Nukkit platformai
+# Vieni nustatymai yra saugūs, kiti gali sulaužyti Jūsų serverį, jeigu įrašytos blogos reikšmės
+# Atnaujinant serverio platformą nustatymai turėtų išlikti
+
+settings:
+ #Kalbos nustatymas
+ #Galimos kalbos: eng, chs, cht, jpn, rus, spa, pol, bra, kor, ukr, deu, ltu
+ language: "ltu"
+ #Ar priverstinai įjungti kalbą ar leisti pačiam įrenginiui susidoroti su vertimu
+ force-language: false
+ shutdown-message: "Serveris išjungtas"
+ #Rodo įskiepius per Query
+ query-plugins: true
+ #Rodyti pranešimą konsolėje, jei įskiepiai naudoja senus API metodus
+ deprecated-verbose: true
+ #AsyncTask workerių skaičius
+ #Jeigu nustatytas ant auto, jis automatiškai bandys aptikti branduolių skaičių (ir bent 4)
+ async-workers: auto
+
+network:
+ #Didžiausas leistinas paketų rūšiavimas bitais. Tik šie paketai bus suspausti
+ #Nustatykite 0, jeigu norite suspausti visus paketus, -1, kad išjungti
+ batch-threshold: 256
+ #Suspaudimo lygis naudojant Zlib kai siunčiami suspausti paketai. Didesnė reikšmė = daugiau CPU, mažiau tinklo naudojimo
+ compression-level: 7
+ #Naudoti AsyncTasks suspaudimui. Prideda puse/vieno impulso vėlavimą, tačiau sumažina CPU naudojimą pagrindinėje serverio gijoje
+ async-compression: false
+
+debug:
+ #Jeigu > 1, jis rodys derinimo pranešimus konsolėje
+ level: 1
+ #Įjungia komandas: /status /gc
+ commands: false
+
+timings:
+ #Enable core and plugin timings by default
+ enabled: false
+ #Enable monitoring at verbose level, include high-frequency timings
+ verbose: false
+ #Interval between history frames in ticks
+ #Default is 5 minutes (6000 ticks)
+ history-interval: 6000
+ #Length of the whole timing history in ticks
+ #Default is 1 hour (72000 ticks)
+ #This value is capped at a maximum of history-interval * 12
+ history-length: 72000
+ #For special cases of servers with special permission to bypass the max
+ #This max helps keep data file sizes reasonable for processing on Aikar's Timing parser side
+ #Setting this will not help you bypass the max unless Aikar has added an exception on the API side
+ bypass-max: false
+ #If set to true, name of your server won't be sent
+ privacy: false
+ #Settings sections to ignore. These sections won't be sent to Aikar's Timing parser
+ #For example: [all] or [settings, timings]
+ ignore: []
+
+level-settings:
+ #Įprastinis formatas kuriant pasaulius
+ default-format: anvil
+ #Automatiškai keisti impuslų greitį, kad atiktiktų pasaulio 20 impulsų per sekundę greitį
+ auto-tick-rate: true
+ auto-tick-rate-limit: 20
+ #Nustatyti impulsų skaičių (1 = 20 impulsai per sekundę, 2 = 10 impulsai per sekunde ir t.t.)
+ base-tick-rate: 1
+ #Atnaujinti visus žaidėjus pasaulyje kiekvieną impulsą, nors kiti nustatymai to neleidžia
+ always-tick-players: false
+
+chunk-sending:
+ #Chunkų skaičius nusiunčiamas žaidėjui per vieną impulsą
+ per-tick: 4
+ #Daugiausiai chunkų nusiunčiamų žaidėjui
+ max-chunks: 192
+ #Minimalus chunkų skaičius norint, kad žaidėjas atsirastų pasaulyje
+ spawn-threshold: 56
+ #Įrašyti pasaulio informaciją į RAM, kad informacija būtų greičiau pasiekiama
+ #Tobulas dalykas, jeigu pasaulis yra daugiausiai statinis ir į jį prisijungia daug žaidėjų vienu metu
+ cache-chunks: false
+
+chunk-ticking:
+ #Chunkų limitas, kurį gali apdoroti serveris per vieną impulsą
+ per-tick: 40
+ #Kiek chunkų apdoroti aplink kiekvieną žaidėją
+ tick-radius: 3
+ light-updates: false
+ clear-tick-list: false
+
+chunk-generation:
+ #Kiek daugiausiai chunkų gali laukti generavimo laukimo eilėje
+ queue-size: 8
+ #Kiek daugiausiai chunkų gali laukti antrinio generavimo laukimo eilėje
+ population-queue-size: 8
+
+ticks-per:
+ animal-spawns: 400
+ monster-spawns: 1
+ autosave: 6000
+ cache-cleanup: 900
+
+spawn-limits:
+ #Atsiradimo limitai
+ monsters: 70
+ animals: 15
+ water-animals: 5
+ ambient: 15
+ 
+player:
+ #Jeigu įvestis "true", tai žaidėjo informacija bus išsaugota faile players/zaidejo-vardas.dat
+ #Jeigu įvestis "false", nukkit neišsaugos žaidėjo informacijos į "dat" failus, kad įskiepiai galėtų kažką padaryti su jais
+ save-player-data: true
+
+aliases:
+ #Alternatyvos komandoms
+ #Pavyzdžiai:
+ #showtheversion: version
+ #savestop: [save-all, stop]
+
+worlds:
+ #Visi šie nustatymai nepaisys nustatymų server.properties failiuke bei šie nustatymai leidžia įkelti daugiau nei vieną pasaulį
+ #Pavyzdys:
+ #world:
+ # seed: 404
+# generator: FLAT:2;7,59x1,3x3,2;1;decoration(treecount=80 grasscount=45)

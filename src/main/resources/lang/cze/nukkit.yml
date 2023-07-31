@@ -1,0 +1,123 @@
+# Hlavni nastavovaci soubor pro Nukkit
+# Některé z těchto nastavení jsou bezpečné, jiné mohou přerušit váš server, pokud jsou nesprávně upraveny
+# Nové nastavení/výchozí hodnoty se v tomto souboru automaticky nezobrazí při upgradu
+
+settings:
+ #Multi-jazykove nastaveni
+ #Dostupne: eng, chs, cht, jpn, rus, spa, pol, bra, kor, ukr, deu, ltu, cze 
+ language: "cze"
+ #Whether to send all strings translated to server locale or let the device handle them
+ #Zda chcete odeslat všechny řetězce přeložené do lokálního serveru nebo nechat zařízení zvládnout
+ force-language: false
+ shutdown-message: "Server se vypíná"
+ #Povolí prohlížení pluginu pomoci Query
+ query-plugins: true
+ #Console pošle zprávu pokud plugin používá zastaralé metody API
+ deprecated-verbose: true
+ #Počet pracovníků AsyncTasku
+ #Pokud je nastaven na automatické, pokusí se detekovat počet jader (a nejméně 4)
+ async-workers: auto
+
+network:
+ #Threshold pro dávkové pakety v bajtech. Pouze tyto pakety budou komprimovány
+ #Nastavte na 0, chcete-li vše komprimovat, -1 zakázat
+ batch-threshold: 256
+ #Compression level používaný Zlib při odesílání dávkových paketů. Vyšší = více CPU, méně využití šířky pásma
+ compression-level: 7
+ #Použijte AsyncTask pro kompresi. Přidá polovinu/jeden tick zpoždění, méně CPU zatížení na hlavní vlákno
+ async-compression: false
+
+debug:
+ #Pokud je nastavena 1, console posílá debug zprávy
+ level: 1
+ #Povolení příkazů: /status /gc
+ commands: false
+
+timings:
+ #Povolit časování jádra a pluginů na výchozí hodnotu
+ enabled: false
+ #Povolit sledování na úrovni verbose, včetně vysokofrekvenčních časů
+ verbose: false
+ #Interval mezi starými snímky v tickách
+ #Výchoze je 5 minut (6000 ticks)
+ history-interval: 6000
+ #Délka celé historie časování u ticku
+ #Výchozí je 1 hodina (72000 ticku)
+ #Tato hodnota je omezena maximálním časovým intervalem * 12
+ history-length: 72000
+ #Pro speciální případy serverů se zvláštním povolením obejití max
+ #Tento max pomáhá udržovat velikosti datových souborů přiměřené pro zpracování na straně časovače analyzátoru Aikar
+ #Nastavení tohoto nastavení vám nepomůže vynechat max, pokud Aikar nepřidá na straně API výjimku
+ bypass-max: false
+ #Pokud je nastavena na hodnotu true, nebude název serveru odeslán
+ privacy: false
+ #Nastavení, které chcete ignorovat. Tyto sekce nebudou odeslány analyzátoru Aikar Timing
+ #Například: [vše] nebo [nastavení, časování]
+ ignore: []
+
+level-settings:
+ #Výchozí formát, který budou světy používat při vytvoření
+ default-format: anvil
+ #Automaticky měnit level tick a zachovat 20 ticků za sekundu
+ auto-tick-rate: true
+ auto-tick-rate-limit: 20
+ #Nastaví základní ticky (1 = 20 ticků za sekundu, 2 = 10 ticku za sekundu atd.).
+ base-tick-rate: 1
+ #Tickne všechny hráče každý tick, i když to ostatní nastavení zakáže
+ always-tick-players: false
+
+chunk-sending:
+ #Množství chunků které se pošlou hráčovi každý tick
+ per-tick: 4
+ #Množství chunků poslaných kolem každého hráče
+ max-chunks: 192
+ #Množství chunků, které je třeba poslat před tím, než se hráč spawne
+ spawn-threshold: 56
+ #Uloží serializovanou kopii chunků v paměti pro rychlejší odesílání
+ #Použije se ve většině statických světech, kde se najednou připojuje spousta hráčů
+ cache-chunks: false
+
+chunk-ticking:
+ #Max množství chunků které se zpracovává každý tick
+ per-tick: 40
+ #Radius chunků kolem hráče, který se má ticknout
+ tick-radius: 3
+ light-updates: false
+ clear-tick-list: false
+
+chunk-generation:
+ #Max. Množství chunků v čekací frontě, která má být generována
+ queue-size: 8
+ #Max. množství chunků ktere vyčkává ve frontě na "osídlení"
+ population-queue-size: 8
+
+ticks-per:
+ animal-spawns: 400
+ monster-spawns: 1
+ autosave: 6000
+ cache-cleanup: 900
+
+spawn-limits:
+#Maximální množství těchto entit
+ monsters: 70
+ animals: 15
+ water-animals: 5
+ ambient: 15
+ 
+player:
+ #Pokud je true, data hráče budou uložena jako players/playername.dat
+ #Pokud je false, nukkit neukládá data hráče jako "datové" soubory, aby mohly pluginy něco udělat.
+ save-player-data: true
+ 
+aliases:
+ #Aliasy pro příkazy
+ #Například:
+ #showtheversion: version
+ #savestop: [save-all, stop]
+
+worlds:
+ #Tato nastavení přepíše generátor nastavený v server.properties a umožňuje načítání více světů
+ #Například:
+ #world:
+ # seed: 404
+ # generator: FLAT:2;7,59x1,3x3,2;1;decoration(treecount=80 grasscount=45)
