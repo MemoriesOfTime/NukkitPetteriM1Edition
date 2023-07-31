@@ -73,6 +73,7 @@ public class GlobalBlockPalette {
     private static final Int2IntMap legacyToRuntimeId575 = new Int2IntOpenHashMap();
     private static final Int2IntMap legacyToRuntimeId582 = new Int2IntOpenHashMap();
     private static final Int2IntMap legacyToRuntimeId589 = new Int2IntOpenHashMap();
+    private static final Int2IntMap legacyToRuntimeId594 = new Int2IntOpenHashMap();
 
     private static final Int2IntMap runtimeIdToLegacy428 = new Int2IntOpenHashMap();
     private static final Int2IntMap runtimeIdToLegacy440 = new Int2IntOpenHashMap();
@@ -88,6 +89,7 @@ public class GlobalBlockPalette {
     private static final Int2IntMap runtimeIdToLegacy575 = new Int2IntOpenHashMap();
     private static final Int2IntMap runtimeIdToLegacy582 = new Int2IntOpenHashMap();
     private static final Int2IntMap runtimeIdToLegacy589 = new Int2IntOpenHashMap();
+    private static final Int2IntMap runtimeIdToLegacy594 = new Int2IntOpenHashMap();
 
     private static byte[] compiledTable282;
     private static byte[] compiledTable291;
@@ -129,6 +131,7 @@ public class GlobalBlockPalette {
         legacyToRuntimeId575.defaultReturnValue(-1);
         legacyToRuntimeId582.defaultReturnValue(-1);
         legacyToRuntimeId589.defaultReturnValue(-1);
+        legacyToRuntimeId594.defaultReturnValue(-1);
 
         runtimeIdToLegacy428.defaultReturnValue(-1);
         runtimeIdToLegacy440.defaultReturnValue(-1);
@@ -144,6 +147,7 @@ public class GlobalBlockPalette {
         runtimeIdToLegacy575.defaultReturnValue(-1);
         runtimeIdToLegacy582.defaultReturnValue(-1);
         runtimeIdToLegacy589.defaultReturnValue(-1);
+        runtimeIdToLegacy594.defaultReturnValue(-1);
     }
 
     public static void init() {
@@ -361,6 +365,7 @@ public class GlobalBlockPalette {
         loadBlockStatesAndExtras(575, legacyToRuntimeId575, runtimeIdToLegacy575);
         loadBlockStatesAndExtras(582, legacyToRuntimeId582, runtimeIdToLegacy582);
         loadBlockStatesAndExtras(589, legacyToRuntimeId589, runtimeIdToLegacy589);
+        loadBlockStates(paletteFor(594), legacyToRuntimeId594, runtimeIdToLegacy594);
     }
 
     private static void loadBlockStatesAndExtras(int protocol, @NotNull Int2IntMap legacyToRuntime, @NotNull Int2IntMap runtimeIdToLegacy) {
@@ -593,34 +598,20 @@ public class GlobalBlockPalette {
                     }
                 }
                 return runtimeId;
-            case ProtocolInfo.v1_19_20:
-            case ProtocolInfo.v1_19_21:
-            case ProtocolInfo.v1_19_30_23:
-            case ProtocolInfo.v1_19_30:
-            case ProtocolInfo.v1_19_40:
-            case ProtocolInfo.v1_19_50:
-            case ProtocolInfo.v1_19_60:
-            case ProtocolInfo.v1_19_63:
-            case ProtocolInfo.v1_19_70_24:
-            case ProtocolInfo.v1_19_70:
-            case ProtocolInfo.v1_19_80:
-            case ProtocolInfo.v1_20_0_23:
-            case ProtocolInfo.v1_20_0:
-                return legacyToRuntimeId(protocol, id, meta, legacyId);
-            // Multiversion
             default:
-                throw new IllegalArgumentException("Tried to get block runtime id for unsupported protocol version: " + protocol);
+                return legacyToRuntimeId(protocol, id, meta, legacyId);
         }
     }
 
     private static int legacyToRuntimeId(int protocol, int id, int meta, int legacyId) {
         int runtimeId;
-        runtimeId = getLegacyToRuntimeIdMap(protocol).get(legacyId);
+        Int2IntMap legacyToRuntimeIdMap = getLegacyToRuntimeIdMap(protocol);
+        runtimeId = legacyToRuntimeIdMap.get(legacyId);
         if (runtimeId == -1) {
-            runtimeId = getLegacyToRuntimeIdMap(protocol).get(id << 6);
+            runtimeId = legacyToRuntimeIdMap.get(id << 6);
             if (runtimeId == -1) {
                 log.info("(" + protocol + ") Missing block runtime id mappings for " + id + ':' + meta);
-                runtimeId = getLegacyToRuntimeIdMap(protocol).get(BlockID.INFO_UPDATE << 6);
+                runtimeId = legacyToRuntimeIdMap.get(BlockID.INFO_UPDATE << 6);
             }
         }
         return runtimeId;
@@ -647,6 +638,10 @@ public class GlobalBlockPalette {
             case ProtocolInfo.v1_20_0_23:
             case ProtocolInfo.v1_20_0:
                 return legacyToRuntimeId589;
+            case ProtocolInfo.v1_20_10_21:
+            case ProtocolInfo.v1_20_10:
+                return legacyToRuntimeId594;
+            // TODO Multiversion
             default:
                 throw new IllegalArgumentException("Tried to get legacyToRuntimeIdMap for unsupported protocol version: " + protocol);
         }
@@ -738,7 +733,9 @@ public class GlobalBlockPalette {
     }
 
     public static int getLegacyFullId(int protocolId, int runtimeId) {
-        if (protocolId >= ProtocolInfo.v1_20_0_23) {
+        if (protocolId >= ProtocolInfo.v1_20_10) {
+            return runtimeIdToLegacy594.get(runtimeId);
+        } else if (protocolId >= ProtocolInfo.v1_20_0_23) {
             return runtimeIdToLegacy589.get(runtimeId);
         } else if (protocolId >= ProtocolInfo.v1_19_80) {
             return runtimeIdToLegacy582.get(runtimeId);

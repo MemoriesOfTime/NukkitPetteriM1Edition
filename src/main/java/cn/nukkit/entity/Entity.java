@@ -17,12 +17,9 @@ import cn.nukkit.event.player.PlayerInteractEvent;
 import cn.nukkit.event.player.PlayerInteractEvent.Action;
 import cn.nukkit.event.player.PlayerTeleportEvent;
 import cn.nukkit.item.Item;
-import cn.nukkit.item.ItemID;
+import cn.nukkit.item.ItemTotem;
 import cn.nukkit.item.enchantment.Enchantment;
-import cn.nukkit.level.GameRule;
-import cn.nukkit.level.Level;
-import cn.nukkit.level.Location;
-import cn.nukkit.level.Position;
+import cn.nukkit.level.*;
 import cn.nukkit.level.format.FullChunk;
 import cn.nukkit.math.*;
 import cn.nukkit.metadata.MetadataValue;
@@ -34,15 +31,11 @@ import cn.nukkit.nbt.tag.FloatTag;
 import cn.nukkit.nbt.tag.ListTag;
 import cn.nukkit.network.protocol.*;
 import cn.nukkit.network.protocol.types.EntityLink;
-import cn.nukkit.plugin.InternalPlugin;
 import cn.nukkit.plugin.Plugin;
 import cn.nukkit.potion.Effect;
 import cn.nukkit.utils.ChunkException;
 import cn.nukkit.utils.MainLogger;
 import cn.nukkit.utils.Utils;
-import co.aikar.timings.Timing;
-import co.aikar.timings.Timings;
-import co.aikar.timings.TimingsHistory;
 import com.google.common.collect.Iterables;
 import org.apache.commons.math3.util.FastMath;
 
@@ -204,6 +197,7 @@ public abstract class Entity extends Location implements Metadatable {
     public static final int DATA_PLAYER_LAST_DEATH_POS = 127;
     public static final int DATA_PLAYER_LAST_DEATH_DIMENSION = 128;
     public static final int DATA_PLAYER_HAS_DIED = 129;
+    public static final int DATA_COLLISION_BOX = 130; //vector3f
 
     // Flags
     public static final int DATA_FLAG_ONFIRE = 0;
@@ -320,6 +314,7 @@ public abstract class Entity extends Location implements Metadatable {
     public static final int DATA_FLAG_RISING = 111;
     public static final int DATA_FLAG_FEELING_HAPPY = 112;
     public static final int DATA_FLAG_SEARCHING = 113;
+    public static final int DATA_FLAG_CRAWLING = 114;
 
     public static final double STEP_CLIP_MULTIPLIER = 0.4;
 
@@ -446,8 +441,6 @@ public abstract class Entity extends Location implements Metadatable {
 
     public boolean noClip = false;
 
-    protected Timing timing;
-
     public final boolean isPlayer;
 
     private volatile boolean init;
@@ -562,8 +555,6 @@ public abstract class Entity extends Location implements Metadatable {
         }
 
         this.init = true;
-
-        this.timing = Timings.getEntityTiming(this);
 
         this.temporalVector = new Vector3();
 
@@ -860,7 +851,7 @@ public abstract class Entity extends Location implements Metadatable {
     }
 
     public void recalculateBoundingBox() {
-        this.recalculateBoundingBox(false);
+        this.recalculateBoundingBox(true);
     }
 
     public void recalculateBoundingBox(boolean send) {
@@ -1347,15 +1338,16 @@ public abstract class Entity extends Location implements Metadatable {
             if (source.getCause() != DamageCause.VOID && source.getCause() != DamageCause.SUICIDE) {
                 Player p = (Player) this;
                 boolean totem = false;
-                if (p.getOffhandInventory().getItemFast(0).getId() == ItemID.TOTEM) {
-                    p.getOffhandInventory().clear(0);
+                boolean isOffhand = false;
+                if (p.getOffhandInventory().getItemFast(0) instanceof ItemTotem) {
                     totem = true;
-                } else if (p.getInventory().getItemInHandFast().getId() == ItemID.TOTEM) {
-                    p.getInventory().clear(p.getInventory().getHeldItemIndex());
+                    isOffhand = true;
+                } else if (p.getInventory().getItemInHandFast() instanceof ItemTotem) {
                     totem = true;
                 }
                 if (totem) {
                     this.getLevel().addLevelEvent(this, LevelEventPacket.EVENT_SOUND_TOTEM);
+                    this.getLevel().addParticleEffect(this, ParticleEffect.TOTEM);
 
                     this.extinguish();
                     this.removeAllEffects();
@@ -1370,12 +1362,18 @@ public abstract class Entity extends Location implements Metadatable {
                     pk.event = EntityEventPacket.CONSUME_TOTEM;
                     p.dataPacket(pk);
 
+                    if (isOffhand) {
+                        p.getOffhandInventory().clear(0);
+                    } else {
+                        p.getInventory().clear(p.getInventory().getHeldItemIndex());
+                    }
+
                     source.setCancelled(true);
                     return false;
                 }
             }
         }
-        setHealth(newHealth);
+        this.setHealth(newHealth);
         return true;
     }
 
@@ -1557,8 +1555,6 @@ public abstract class Entity extends Location implements Metadatable {
     }
 
     public boolean entityBaseTick(int tickDiff) {
-        if (Timings.entityBaseTickTimer != null) Timings.entityBaseTickTimer.startTiming();
-
         if (!this.isPlayer) {
             //this.blocksAround = null; // Use only when entity moves for better performance
             this.collisionBlocks = null;
@@ -1572,7 +1568,6 @@ public abstract class Entity extends Location implements Metadatable {
             if (!this.isPlayer) {
                 this.close();
             }
-            if (Timings.entityBaseTickTimer != null) Timings.entityBaseTickTimer.stopTiming();
             return false;
         }
         if (riding != null && !riding.isAlive() && riding instanceof EntityRideable) {
@@ -1649,9 +1644,7 @@ public abstract class Entity extends Location implements Metadatable {
 
         this.age += tickDiff;
         this.ticksLived += tickDiff;
-        TimingsHistory.activatedEntityTicks++;
 
-        if (Timings.entityBaseTickTimer != null) Timings.entityBaseTickTimer.stopTiming();
         return hasUpdate;
     }
 
@@ -1886,16 +1879,6 @@ public abstract class Entity extends Location implements Metadatable {
     }
 
     public final void scheduleUpdate() {
-        //TODO 这是为了防止插件错误操作的，支持异步后移除这个检查
-        if (!this.server.isPrimaryThread()) {
-            this.server.getScheduler().scheduleTask(InternalPlugin.INSTANCE, this::scheduleUpdate);
-            try {
-                throw new UnsupportedOperationException("Asynchronous Entity#scheduleUpdate()");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return;
-        }
         this.level.updateEntities.put(this.id, this);
     }
 
@@ -2195,8 +2178,6 @@ public abstract class Entity extends Location implements Metadatable {
             return true;
         }
 
-        if (Timings.entityMoveTimer != null) Timings.entityMoveTimer.startTiming();
-
         AxisAlignedBB newBB = this.boundingBox.getOffsetBoundingBox(dx, dy, dz);
 
         if (server.getAllowFlight() || !this.level.hasCollision(this, newBB, false)) {
@@ -2217,7 +2198,6 @@ public abstract class Entity extends Location implements Metadatable {
         }
         this.isCollided = this.onGround;
         this.updateFallState(this.onGround);
-        if (Timings.entityMoveTimer != null) Timings.entityMoveTimer.stopTiming();
         return true;
     }
 
@@ -2236,8 +2216,6 @@ public abstract class Entity extends Location implements Metadatable {
             this.onGround = this.isPlayer;
             return true;
         } else {
-            if (Timings.entityMoveTimer != null) Timings.entityMoveTimer.startTiming();
-
             this.ySize *= STEP_CLIP_MULTIPLIER;
 
             double movX = dx;
@@ -2338,7 +2316,6 @@ public abstract class Entity extends Location implements Metadatable {
                 this.motionZ = 0;
             }
 
-            if (Timings.entityMoveTimer != null) Timings.entityMoveTimer.stopTiming();
             return true;
         }
     }
@@ -2530,6 +2507,10 @@ public abstract class Entity extends Location implements Metadatable {
                 if (this.isPlayer && this.server.dimensionsEnabled && newLevel.getDimension() != oldLevel.getDimension()) {
                     ((Player) this).setDimension(newLevel.getDimension());
                 }
+
+                // 切换世界后重置碰撞计算
+                this.blocksAround = null;
+                this.collisionBlocks = null;
             } else {
                 this.x = pos.x;
                 this.y = pos.y;
@@ -2541,7 +2522,7 @@ public abstract class Entity extends Location implements Metadatable {
             this.z = pos.z;
         }
 
-        this.recalculateBoundingBox();
+        this.recalculateBoundingBox(false);
 
         if (!this.isPlayer) {
             this.blocksAround = null;
